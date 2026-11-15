@@ -74,7 +74,7 @@ python -m http.server 8000 --directory docs   # 打开 http://localhost:8000/
 | 300×300 方形 logo | — | **每种语言必需** | ✅ `store-assets/logo-300.png` |
 | 440×280 / 1400×560 宣传图 | 可选 | 可选 | ✅ `store-assets/` |
 | **至少 1 张 1280×800 截图** | **必需**（最多 5 张） | 可选（最多 6 张） | ❌ 需真机截图，不能用示意图 |
-| 详细商品描述 | 必填 | **每种语言 250–10000 字符** | ❌ 需撰写 |
+| 详细商品描述 | 必填 | **每种语言 250–10000 字符** | ✅ 中英两版文案见下 |
 | 简短描述 | 取自 manifest `description`（只读） | 同左（只读） | ✅ 已在 `_locales`，已去掉"中英"定语 |
 | 分类 | 必填（建议 Accessibility / Productivity） | 必填 | ❌ 提交时选择 |
 | 隐私政策 URL | 有 host_permissions 时必需 | 涉及个人信息时必需 | ✅ https://ryanlq.github.io/offline-bilingual-translator/privacy.html |
@@ -129,6 +129,54 @@ Edge 的 Privacy 页与 Chrome 的 Privacy practices 都是英文表单，审核
 > 5. 之后断网复测，页面翻译仍可用。
 >
 > 提示：若未先下载模型，翻译会提示缺少语言包；这是预期行为，不是故障。
+
+### Store listings 详细描述（两个 locale 各填一份）
+
+Edge 的 `Details for Chinese (China)` / `Details for English` 里 **Extension name 是只读的**（取自 manifest 的 `__MSG_extName__`，要改需改 `_locales` 后重新打包上传、并升版本号）；`Description` 必填、**每种语言 250–10000 字符**、需覆盖全部功能。中文页填中文、英文页填英文，不要用同一份；`Generate with AI` 可用但生成结果仍需自行核对，直接粘贴下面两版更稳。纯文本，勿带 Markdown 标记。
+
+**中文（Chinese (China)）**
+
+```text
+离线双语翻译是一款完全在浏览器本地运行的双语对照网页翻译扩展。它由 Mozilla Bergamot WASM 翻译引擎驱动，把译文按段落显示在原文下方，原文始终保留，方便对照阅读与核对术语；译文使用独立的 Shadow DOM 渲染，不会破坏原网页的样式、布局与交互。翻译过程不产生任何网络请求，也不需要账号、密钥或云端服务。
+
+主要功能
+
+- 网页双语对照：点击工具栏按钮或按 Alt+Shift+T 开关当前页面的对照翻译；自动识别段落、标题、列表项与表格单元格；鼠标悬停译文可高亮对应原文。
+- 划词翻译：选中文字后弹出译文小窗，默认开启，可在工具栏弹窗或设置页即时关闭；仅当选中内容符合当前翻译源语言时才出现。右键菜单「翻译选中文本」可对任意选区显式调用。
+- 图片与屏幕 OCR 翻译：按 Alt+Shift+O 框选屏幕任意区域，或右键点击网页图片选择「OCR 翻译此图片」；Tesseract.js 在本地识别文字，再由离线引擎翻译，结果以浮窗显示。
+- 更多语言包：默认英→中，内置英中双向模型；设置页「更多语言包」可从 Bergamot 官方仓库按需下载约 20 个语言对（法、德、西、俄、乌、捷克等，单个约 20–37 MB）。安装后自动加入「翻译方向」下拉，可用于网页对照、划词与 OCR 翻译，随时可删除。
+- 可自定义：译文字号、颜色、悬停高亮、翻译方向、划词开关、OCR 识别语言，以及用 CSS 选择器排除不想翻译的页面区域。
+
+离线与隐私
+
+首次使用需要联网下载语言模型（约 45 MB/方向）、所选语言包或 OCR 识别数据，下载来自 Mozilla / Bergamot / Tesseract 官方源，均带 SHA-256 完整性校验并缓存在浏览器本地，之后可完全断网使用。为生成译文，扩展会在本机读取当前网页的文字与 OCR 时你框选的屏幕区域，这些内容只在内存中即时处理，不落盘、不上传、不留存；无统计分析、遥测、崩溃上报、账号体系与翻译历史。设置与模型保存在扩展私有存储中，卸载即清除。隐私政策：https://ryanlq.github.io/offline-bilingual-translator/privacy.html
+
+要求与说明
+
+适用于 Chrome / Edge 116 及以上版本。语言包只在下载那一刻联网，官方索引不可用时回退到本地缓存，已安装的语言包不受影响。极少数使用 closed Shadow DOM 深度封装的页面受浏览器安全边界限制，可能无法注入译文。本项目以 Apache-2.0 开源，源码可审计：https://github.com/ryanlq/offline-bilingual-translator
+```
+
+**English**
+
+```text
+Offline Bilingual Translator is a browser extension that translates web pages into a bilingual view entirely on your device. Powered by the Mozilla Bergamot WASM engine, it inserts the translated text directly beneath each original paragraph, so the source stays visible for side-by-side reading and terminology checking. Translations are rendered in an isolated Shadow DOM, leaving the page's styles, layout and interactions untouched. Translation itself makes zero network requests and needs no account, API key or cloud service.
+
+Features
+
+- Bilingual paragraphs: toggle translation for the current page from the toolbar or with Alt+Shift+T. Paragraphs, headings, list items and table cells are collected automatically, and hovering a translated block highlights the corresponding original text.
+- Selection translation: select text to open a compact translation popup. It is on by default, can be switched off instantly from the toolbar popup or the options page, and only appears when the selected text matches the current source language. A "Translate selected text" context-menu item works on any selection on demand.
+- Image and screen OCR: press Alt+Shift+O to drag a box over any screen region, or right-click an image and choose "OCR this image". Tesseract.js recognises the text locally and the offline engine translates it; the result appears in a floating panel.
+- More language packs: English-Chinese models are built in, with English to Chinese as the default direction. The "More language packs" section of the options page lists about 20 language pairs from the official Bergamot repository (French, German, Spanish, Russian, Ukrainian, Czech and others, roughly 20-37 MB each). Installed pairs appear in the translation-direction menu and work for page, selection and OCR translation; they can be removed at any time.
+- Customisation: translated-text font size and colour, hover highlighting, translation direction, the selection-popup switch, OCR recognition languages, and CSS selectors for page regions you want to exclude.
+
+Offline and privacy
+
+The first use requires an internet connection to download a language model (about 45 MB per direction), an optional language pack or OCR language data. Files come from the official Mozilla, Bergamot and Tesseract sources, are verified with SHA-256 and cached locally, after which the extension works fully offline. To produce a translation the extension reads the text of the current page locally, plus the screen region you select for OCR. This content is processed in memory only and is never written to disk, uploaded, shared or retained. There is no analytics, telemetry, crash reporting, account system or translation history. Settings and models stay in extension-private local storage and are removed when the extension is uninstalled. Privacy policy: https://ryanlq.github.io/offline-bilingual-translator/privacy.html
+
+Requirements and limitations
+
+Requires Chrome or Edge 116 or later. The network is used only at the moment a resource is downloaded; if the official index is unavailable the extension falls back to the cached copy and installed packs keep working. A small number of pages that rely on deeply nested closed Shadow DOM cannot be injected because of browser security boundaries. The project is open source under Apache-2.0 and the code can be audited at https://github.com/ryanlq/offline-bilingual-translator
+```
 
 ## 技术架构
 
