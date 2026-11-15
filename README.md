@@ -87,26 +87,39 @@ python -m http.server 8000 --directory docs   # 打开 http://localhost:8000/
 
 ### 可直接粘贴的审核文案
 
-**单一用途（Single purpose）**
-> 在浏览器本地对网页做双语对照翻译：把译文按段落插到原文下方，并提供划词翻译与图片 OCR 翻译。翻译全部由随扩展分发的 Bergamot WASM 引擎在本地完成，不向任何服务器发送页面内容。
->
-> Translate web pages into a bilingual view entirely on-device by inserting translated paragraphs beneath the original text, plus selection translation and image OCR. All translation runs in the bundled Bergamot WASM engine; no page content is sent to any server.
+Edge 的 Privacy 页与 Chrome 的 Privacy practices 都是英文表单，审核员按英文阅读，建议**直接填英文**；理由要具体到功能并写明数据留在本地，不要写 "needed for the extension to work" 这类空话。
 
-**权限理由（按 manifest 逐条填）**
+**① Single purpose description**（只讲一个用途，划词/OCR 作为同一功能的入口）
 
-| 权限 | 理由 |
+> Translate the text of web pages into a bilingual view entirely on the user's device, by inserting the translated paragraph directly beneath the original one. Selection translation and image OCR are two ways of invoking this same translation feature. All inference runs in the bundled Bergamot WASM engine; no page content is ever transmitted to a server.
+
+**② Permission justification（每个框单独粘贴）**
+
+| 表单字段 | 英文理由 |
 |------|------|
-| `offscreen` | Service Worker 无 DOM；Bergamot WASM 引擎与 Tesseract worker 需要一个隐藏文档作为运行宿主 |
-| `storage` / `unlimitedStorage` | 保存用户设置；约 45 MB/方向的模型文件缓存在 IndexedDB，超出普通配额 |
-| `contextMenus` | 右键菜单「翻译选中文本」「OCR 翻译此图片」 |
-| `activeTab` / `tabs` | 定位当前标签页并发送消息；OCR 框选时用 `captureVisibleTab` 截取可视区域 |
-| `declarativeNetRequest` | 仅对模型 CDN 域名改写 User-Agent（该 CDN 对 Chrome UA 返回 406），规则不匹配任何页面 |
-| 4 个 `host_permissions` | 首次使用时下载 Mozilla / Bergamot 模型与 Tesseract 识别数据，之后永久缓存；请求中不含用户数据 |
-| `content_scripts` `<all_urls>` | 需要对用户打开的任意网页提取段落并插入译文 |
+| `offscreen` | MV3 service workers have no DOM. The bundled Bergamot WASM engine and the Tesseract.js OCR worker need a hidden offscreen document as their runtime host. It contains no remote code and is never shown to the user. |
+| `storage` | Stores only the user's own preferences (font size, colors, translation direction, selection-translation toggle) and the list of installed language packs in chrome.storage.local. Nothing is synced or uploaded. |
+| `unlimitedStorage` | Language models are about 45 MB per direction (up to ~37 MB for each extra pack) and are cached in IndexedDB so translation works offline; this exceeds the default extension storage quota. Files are public, SHA-256 verified and removable from the options page. |
+| `contextMenus` | Adds two context-menu entries, "Translate selected text" and "OCR this image", so the user can translate a selection or an image in place. The first entry is disabled when the user switches the selection popup off in settings. |
+| `activeTab` | Identifies the tab in which the user clicked the toolbar button or pressed a keyboard shortcut, so the page-translation toggle is delivered to that tab only. No URL, title or history is read. |
+| `tabs` | Used only for chrome.tabs.query({active:true,currentWindow:true}) to obtain tab.id / windowId for messaging, and chrome.tabs.captureVisibleTab to capture the screen region the user explicitly drags for OCR. The extension never reads tab.url or tab.title, never builds browsing history, and the captured image is cropped and processed in memory only. |
+| `declarativeNetRequest` | Installs one dynamic rule that rewrites the User-Agent header for requests to firefox-settings-attachments.cdn.mozilla.net, because that CDN returns HTTP 406 to a Chrome UA. The rule matches no page URL and inspects no request or response content. |
+| `Host permission` | Four public static-file hosts are contacted only when the user first installs a resource: Mozilla Remote Settings (index + en/zh models), the Bergamot S3 model index/models, and tessdata.projectnaptha.com (OCR language data). Downloads are SHA-256 verified and cached locally; requests contain no page content, user identifier or browsing activity. No translation request is ever sent to these hosts. |
+| `content_scripts` / `<all_urls>`（若表单另列） | The content script must run on whichever page the user chooses to translate, to read paragraph text and insert the translation beneath it. It reads text only, never writes to storage or the network, and skips its own injected nodes. |
 
-**远程代码**：选 `No, I am not using remote code`。所有 JS / WASM 均随包分发；运行时只下载模型二进制与 OCR 训练数据（数据文件，非可执行代码），CSP 为 `script-src 'self' 'wasm-unsafe-eval'; object-src 'self'`。
+**③ Remote code**：选 `No, I am not using remote code`。所有 JS / WASM 随包分发；运行时只下载模型二进制与 OCR 训练数据（数据文件，非可执行代码），CSP 为 `script-src 'self' 'wasm-unsafe-eval'; object-src 'self'`。若 Justification 框可编辑，补一句：
 
-**数据使用**：不收集、不传输任何用户数据（无账号、无埋点、无遥测、无历史记录）；页面文本只在本地内存处理，设置与模型仅存于本地浏览器存储。勾选「不收集任何数据」并做 Limited Use 认证，内容须与隐私政策 URL 一致。
+> All JavaScript and WASM are bundled in the package. The only runtime downloads are static model binaries and OCR training data (data files, never evaluated as code). The CSP forbids any other script source, and there is no analytics, A/B or remote-config SDK.
+
+**④ Data usage（复选框怎么选）**
+
+**只勾 `Website content`，其余 8 项全部不勾**；下方 `I certify that the following disclosures are true` 的 3 条（不出售给第三方 / 不用于与功能无关的目的 / 不用于信用评估）**全部勾上**。
+
+依据：扩展为翻译必须读取当前网页文本，OCR 时还会截取用户框选的屏幕区域，这属于「website content」；Chrome User Data FAQ 第 3 条明确「即使数据只在本地处理、不传外部服务器，也必须披露」。但这些数据只在内存中即时处理、不落盘、不上传、不留存，所以不申报 PII / 健康 / 财务 / 认证 / 通讯 / 位置 / Web history（代码从不读 `tab.url`/`tab.title`，不建浏览历史）/ User activity（mouseup 与选区只用于即时触发功能，不做记录或日志）。
+
+> 保守备选：若审核员认为框选 OCR 的鼠标坐标也算 "User activity"，按其要求补勾该项即可，不影响其它声明。切勿为了图省事勾满或全不勾——表单里没有「不收集任何数据」这个选项，且漏报 Website content 属于 inaccurate disclosure，是常见驳回原因。
+
+**⑤ Privacy Policy URL**：`https://ryanlq.github.io/offline-bilingual-translator/privacy.html`。政策页已按上述口径写明「本地读取但不收集/不传输」，与表单声明一致。
 
 **测试说明 / Notes for certification**
 > 1. 加载扩展后点工具栏图标 →「下载模型」（约 45 MB，**首次需联网**）。

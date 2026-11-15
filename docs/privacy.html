@@ -4,8 +4,8 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="theme-color" content="#3a63f3">
-	<meta name="description" content="离线双语翻译扩展的隐私政策：翻译全程本地完成，零网络请求，不收集任何数据。"
-		data-en-content="Privacy policy for the Offline Bilingual Translator extension: translation is fully on-device, with zero network requests and no data collection.">
+	<meta name="description" content="离线双语翻译扩展的隐私政策：翻译全程本地完成，网页内容仅在本机内存处理，不上传、不留存、零网络请求。"
+		data-en-content="Privacy policy for the Offline Bilingual Translator extension: translation is fully on-device; page content is processed locally in memory only, never uploaded or retained.">
 	<title data-en="Privacy Policy — Offline Bilingual Translator">隐私政策 — 离线双语翻译</title>
 	<link rel="icon" type="image/png" href="assets/icon-128.png">
 	<link rel="stylesheet" href="assets/site.css">
@@ -66,11 +66,15 @@
 		</table>
 		<p data-en="These downloads are integrity-checked with SHA-256, happen only once, and everything works offline afterwards. No page content, translation text or browsing activity is included in these requests.">以上下载均带 SHA-256 完整性校验，下载后即离线可用，无需重复联网。这些请求不包含任何页面内容、译文或浏览活动。</p>
 
-		<h2 data-en="What we do not collect">我们不收集任何数据</h2>
+		<h2 data-en="Data handled on your device only">仅在本机处理的数据</h2>
+		<p data-en="To produce a translation the extension must read two kinds of website content locally: the paragraph text of the page you are viewing (page and selection translation), and the screen region you drag or the image you right-click for OCR. Both are processed in memory only: never written to disk, never uploaded, never shared, and discarded once the result is shown. Store policies require disclosure even for purely local handling, so this is declared as Website content in the Chrome / Edge privacy forms; no other data category applies. The code never reads tab.url or tab.title and never builds browsing history; mouse and selection events only trigger the visible translation feature in the moment, with no logging.">为生成译文，扩展必须在本机读取两类「网站内容」：当前网页的段落文本（页面翻译 / 划词翻译），以及你主动框选的屏幕区域或右键指定的图片（OCR 翻译）。这些内容只在内存中即时处理：不写入磁盘、不上传、不与第三方共享，结果展示后即丢弃。商店政策要求「仅本地处理也需披露」，因此我们在 Chrome / Edge 表单中只申报 Website content（网站内容）一类，其余类别均不适用：代码从不读取 tab.url / tab.title、不建立浏览历史；鼠标与选区事件只用于即时触发翻译功能，不做任何日志。</p>
+
+		<h2 data-en="What we never collect">我们绝不收集的数据</h2>
 		<ul>
 			<li data-en="No analytics, tracking, telemetry or crash reporting">无统计分析 / 埋点 / 遥测 / 崩溃上报</li>
 			<li data-en="No account system and no sign-in of any kind">无账号体系，不需要任何登录</li>
-			<li data-en="We never read, store or upload your browsing history or page content">不读取、不存储、不上传浏览历史与页面内容</li>
+			<li data-en="No personally identifiable, health, financial, authentication, communications or location data">不收集个人身份、健康、财务、认证、通讯与位置信息</li>
+			<li data-en="No browsing history and no user-activity logs of any kind">不读取、不保存浏览历史与用户活动记录</li>
 			<li data-en="No translation history: translated text is shown in the page only and disappears when the tab is closed">不保存翻译历史：译文只在页面内展示，关闭页面即消失</li>
 			<li data-en="Settings are kept exclusively in browser-local extension storage">设置项仅保存在浏览器本地的扩展私有存储中</li>
 		</ul>
