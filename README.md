@@ -77,6 +77,7 @@ python -m http.server 8000 --directory docs   # 打开 http://localhost:8000/
 | 详细商品描述 | 必填 | **每种语言 250–10000 字符** | ✅ 中英两版文案见下 |
 | 简短描述 | 取自 manifest `description`（只读） | 同左（只读） | ✅ 已在 `_locales`，已去掉"中英"定语 |
 | 分类 | 必填（建议 Accessibility / Productivity） | 必填 | ❌ 提交时选择 |
+| Search terms（搜索词） | 可选 | 可选，≤7 词 / 每词 ≤30 字符 / 合计 ≤21 单词 | ✅ 中英两版见下 |
 | 隐私政策 URL | 有 host_permissions 时必需 | 涉及个人信息时必需 | ✅ https://ryanlq.github.io/offline-bilingual-translator/privacy.html |
 | 单一用途 / 权限理由 / 远程代码 / 数据使用 | Privacy 页逐项填 | Privacy 页逐项填 | ✅ 文案见下 |
 | 测试说明 | Test instructions | Notes for certification | ✅ 文案见下 |
@@ -177,6 +178,36 @@ Requirements and limitations
 
 Requires Chrome or Edge 116 or later. The network is used only at the moment a resource is downloaded; if the official index is unavailable the extension falls back to the cached copy and installed packs keep working. A small number of pages that rely on deeply nested closed Shadow DOM cannot be injected because of browser security boundaries. The project is open source under Apache-2.0 and the code can be audited at https://github.com/ryanlq/offline-bilingual-translator
 ```
+
+### Search terms（搜索词，可选但建议填）
+
+Edge 表单限制：**最多 7 个词、每个 ≤30 字符、所有词合计 ≤21 个单词**（按空格分隔计）。搜索词不展示给用户，只影响商店内搜索。中文页填中文、英文页填英文；不要堆无关热词或竞品商标（可能被判关键词堆砌）。逐个点 `Add Term` 添加。
+
+**中文（Chinese (China)）** · 7 词 · 合计 8 个单词 · 最长 6 字符
+
+```text
+离线翻译
+双语对照
+网页翻译
+划词翻译
+图片翻译
+OCR 翻译
+本地翻译
+```
+
+**English** · 7 词 · 合计 19 个单词 · 最长 24 字符
+
+```text
+offline translation
+bilingual web pages
+side by side translation
+translate selection
+image OCR translation
+no network translator
+privacy translator
+```
+
+> 想兼顾中文区的英文搜索，可把中文页最后一条「本地翻译」换成 `offline translator`（17 字符、2 单词），总单词数仍是 9，符合限制。
 
 ## 技术架构
 
