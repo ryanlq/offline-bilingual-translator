@@ -1,0 +1,52 @@
+Offline Bilingual Translator / 离线双语翻译
+Copyright 2026 Offline Bilingual Translator contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this project except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+----------------------------------------------------------------------------
+THIRD-PARTY COMPONENTS
+----------------------------------------------------------------------------
+
+This product bundles or relies on software developed by others. The complete
+attribution list, license obligations and distribution notes are in
+THIRD_PARTY_NOTICES.md, which accompanies this software.
+
+  * Bergamot Translator WASM -- Mozilla Public License 2.0
+    https://github.com/browsermt/bergamot-translator
+    Unmodified build, distributed as-is under MPL-2.0; the license text is
+    included at vendor/bergamot/LICENSE-MPL-2.0.txt.
+
+  * src/workers/bergamot-worker.js -- Mozilla Public License 2.0
+    This file is adapted from the MPL-2.0 covered translator-worker.js of
+    bergamot-translator. It therefore remains subject to MPL-2.0 on a
+    file-by-file basis and is NOT re-licensed under Apache-2.0.
+
+  * Tesseract.js / tesseract.js-core -- Apache License 2.0
+    https://github.com/naptha/tesseract.js
+    Unmodified builds, distributed as-is; license text at
+    vendor/tesseract/LICENSE-Apache-2.0.txt.
+
+  * Firefox Translations models and Bergamot official models -- CC-BY and
+    per-model licenses
+    https://github.com/mozilla/firefox-translations-models
+    Downloaded on demand at runtime, NOT redistributed in this repository or
+    in the extension package. Attribution is shown in the extension UI and in
+    THIRD_PARTY_NOTICES.md.
+
+----------------------------------------------------------------------------
+ARTWORK
+----------------------------------------------------------------------------
+
+The extension icon and store artwork are original assets contributed by the
+project maintainer (source: tools/icon-source.png) and are distributed under
+the project's Apache-2.0 license unless stated otherwise.

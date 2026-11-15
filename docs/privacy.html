@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#3a63f3">
+	<meta name="description" content="离线双语翻译扩展的隐私政策：翻译全程本地完成，零网络请求，不收集任何数据。"
+		data-en-content="Privacy policy for the Offline Bilingual Translator extension: translation is fully on-device, with zero network requests and no data collection.">
+	<title data-en="Privacy Policy — Offline Bilingual Translator">隐私政策 — 离线双语翻译</title>
+	<link rel="icon" type="image/png" href="assets/icon-128.png">
+	<link rel="stylesheet" href="assets/site.css">
+	<script src="assets/site.js" defer></script>
+</head>
+<body>
+
+<header class="site-header">
+	<div class="container header-inner">
+		<a class="brand" href="./">
+			<img src="assets/icon-128.png" alt="" width="34" height="34">
+			<span data-en="Offline Bilingual Translator">离线双语翻译</span>
+		</a>
+		<nav class="nav" aria-label="Primary">
+			<a href="./" data-en="Home">首页</a>
+			<a href="https://github.com/ryanlq/offline-bilingual-translator" rel="noopener">GitHub ↗</a>
+			<div class="lang-switch" role="group" aria-label="Language">
+				<button type="button" data-lang="zh" aria-pressed="true">中</button>
+				<button type="button" data-lang="en" aria-pressed="false">EN</button>
+			</div>
+		</nav>
+	</div>
+</header>
+
+<main class="container">
+	<article class="prose" style="padding:64px 0 0">
+		<p class="kicker" data-en="PRIVACY POLICY">隐私政策</p>
+		<h1 data-en="Privacy Policy">隐私政策</h1>
+		<p class="updated" data-en="Last updated: 15 November 2026 · Applies to extension v0.1.0">最后更新：2026 年 11 月 15 日 · 适用于扩展 v0.1.0</p>
+
+		<div class="callout">
+			<strong data-en="All translation happens on your device.">所有翻译都在你的设备上完成。</strong>
+			<span data-en=" The Bergamot WASM engine and the neural models are stored locally after download. Translation requests are never sent to any server — you can confirm this in the browser's DevTools Network panel."> 翻译引擎（Bergamot WASM）与语言模型在下载完成后完全存于本地，翻译请求不会发送到任何服务器——可通过浏览器开发者工具的 Network 面板直接验证。</span>
+		</div>
+
+		<h2 data-en="The only times the extension uses the network">扩展需要联网的唯一场景</h2>
+		<table>
+			<thead>
+				<tr>
+					<th data-en="Scenario">场景</th>
+					<th data-en="What happens">说明</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td data-en="First model download">首次下载语言模型</td>
+					<td data-en="en↔zh models (~45 MB per direction) from the official Mozilla CDN">en↔zh 模型（约 45 MB/方向）来自 Mozilla 官方 CDN</td>
+				</tr>
+				<tr>
+					<td data-en="Extra language packs">下载其他语言包</td>
+					<td data-en="From the official Bergamot model index, only when you install one">来自 Bergamot 官方模型仓库，仅在主动安装时获取</td>
+				</tr>
+				<tr>
+					<td data-en="First OCR use">首次使用 OCR 识别语言</td>
+					<td data-en="Recognition data from the official Tesseract source, for the languages you choose">识别数据来自 Tesseract 官方源，仅所选语言</td>
+				</tr>
+			</tbody>
+		</table>
+		<p data-en="These downloads are integrity-checked with SHA-256, happen only once, and everything works offline afterwards. No page content, translation text or browsing activity is included in these requests.">以上下载均带 SHA-256 完整性校验，下载后即离线可用，无需重复联网。这些请求不包含任何页面内容、译文或浏览活动。</p>
+
+		<h2 data-en="What we do not collect">我们不收集任何数据</h2>
+		<ul>
+			<li data-en="No analytics, tracking, telemetry or crash reporting">无统计分析 / 埋点 / 遥测 / 崩溃上报</li>
+			<li data-en="No account system and no sign-in of any kind">无账号体系，不需要任何登录</li>
+			<li data-en="We never read, store or upload your browsing history or page content">不读取、不存储、不上传浏览历史与页面内容</li>
+			<li data-en="No translation history: translated text is shown in the page only and disappears when the tab is closed">不保存翻译历史：译文只在页面内展示，关闭页面即消失</li>
+			<li data-en="Settings are kept exclusively in browser-local extension storage">设置项仅保存在浏览器本地的扩展私有存储中</li>
+		</ul>
+
+		<h2 data-en="Data sharing">数据共享与第三方</h2>
+		<p data-en="We do not sell, share or transmit any user data to third parties. Because no personal data is collected in the first place, there is nothing to disclose, transfer or delete on a server. The remote hosts declared in the extension are used solely to download public model and OCR data files.">我们不出售、不共享、不向第三方传输任何用户数据。由于根本不收集个人数据，服务器端不存在需要披露、转移或删除的信息。扩展声明的远程域名只用于下载公开的模型与 OCR 数据文件。</p>
+
+		<h2 data-en="Where local data lives">本地数据的存放位置</h2>
+		<ul>
+			<li data-en="Language models: IndexedDB (extension-private storage)">语言模型：IndexedDB（扩展私有存储）</li>
+			<li data-en="Settings and installed-pack metadata: chrome.storage.local (extension-private storage)">设置项与已装语言包信息：chrome.storage.local（扩展私有存储）</li>
+		</ul>
+		<p data-en="Installed language packs can be removed from the extension's options page at any time. Uninstalling the extension deletes all local data.">设置页可随时删除已下载的语言包；卸载扩展即删除全部本地数据。</p>
+
+		<h2 data-en="How to verify">如何自行验证</h2>
+		<p data-en-html='The source code is public and auditable at <a href="https://github.com/ryanlq/offline-bilingual-translator">github.com/ryanlq/offline-bilingual-translator</a>. Open DevTools → Network, then translate a page: no request is issued. A short explanation is also in <a href="https://github.com/ryanlq/offline-bilingual-translator/blob/main/PRIVACY.md">PRIVACY.md</a>.'>源码公开可审计：<a href="https://github.com/ryanlq/offline-bilingual-translator">github.com/ryanlq/offline-bilingual-translator</a>。打开开发者工具 → Network 后翻译任意页面，不会产生任何请求；仓库中的 <a href="https://github.com/ryanlq/offline-bilingual-translator/blob/main/PRIVACY.md">PRIVACY.md</a> 也有简要说明。</p>
+
+		<h2 data-en="Contact">联系与反馈</h2>
+		<p data-en-html='Questions about this policy can be raised in <a href="https://github.com/ryanlq/offline-bilingual-translator/issues">GitHub Issues</a>. There is no email collection or mailing list.'>对本政策的疑问可在 <a href="https://github.com/ryanlq/offline-bilingual-translator/issues">GitHub Issues</a> 提出；我们不收集邮箱，也没有邮件列表。</p>
+	</article>
+</main>
+
+<footer>
+	<div class="container footer-inner">
+		<div data-en="Offline Bilingual Translator · Apache-2.0">离线双语翻译 · Apache-2.0</div>
+		<div class="footer-links">
+			<a href="./" data-en="Home">首页</a>
+			<a href="https://github.com/ryanlq/offline-bilingual-translator/blob/main/PRIVACY.md" rel="noopener" data-en="Source document">源文件</a>
+			<a href="https://github.com/ryanlq/offline-bilingual-translator/blob/main/LICENSE" rel="noopener" data-en="License">许可协议</a>
+		</div>
+	</div>
+</footer>
+
+</body>
+</html>

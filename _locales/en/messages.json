@@ -1,0 +1,14 @@
+{
+	"extName": {
+		"message": "Offline Bilingual Translator",
+		"description": "Extension name"
+	},
+	"extShortName": {
+		"message": "OffTrans",
+		"description": "Short name (max 12 characters; store package validation rejects longer values)"
+	},
+	"extDescription": {
+		"message": "Fully offline bilingual web translation with a local Bergamot engine. Zero network requests. OCR image translation included.",
+		"description": "Extension description"
+	}
+}

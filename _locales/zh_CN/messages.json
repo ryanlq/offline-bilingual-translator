@@ -1,0 +1,14 @@
+{
+	"extName": {
+		"message": "离线双语翻译",
+		"description": "扩展名称"
+	},
+	"extShortName": {
+		"message": "离线双语翻译",
+		"description": "扩展短名称（工具栏与部分界面使用）"
+	},
+	"extDescription": {
+		"message": "完全离线的双语对照网页翻译：Bergamot 本地引擎，翻译过程零网络请求，附 OCR 图片翻译与划词翻译。",
+		"description": "扩展描述"
+	}
+}

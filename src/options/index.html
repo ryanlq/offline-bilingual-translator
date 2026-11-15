@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8" />
+		<title>离线双语翻译 - 设置</title>
+		<style>
+			:root {
+				--primary: #1a73e8;
+				--text: #202124;
+				--text2: #5f6368;
+				--border: #dadce0;
+				--bg: #f8f9fa;
+			}
+			body {
+				margin: 0;
+				background: var(--bg);
+				font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+					"Microsoft YaHei", sans-serif;
+				color: var(--text);
+			}
+			.container {
+				max-width: 760px;
+				margin: 24px auto;
+				padding: 0 16px 48px;
+			}
+			h1 {
+				font-size: 20px;
+				margin: 16px 0 4px;
+			}
+			.subtitle {
+				color: var(--text2);
+				font-size: 13px;
+				margin-bottom: 20px;
+			}
+			.card {
+				background: #fff;
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				padding: 18px 20px;
+				margin-bottom: 16px;
+			}
+			.card h2 {
+				font-size: 15px;
+				margin: 0 0 12px;
+			}
+			.row {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				margin: 10px 0;
+				flex-wrap: wrap;
+			}
+			.row label.main {
+				min-width: 130px;
+				color: var(--text);
+			}
+			input[type='number'],
+			input[type='text'],
+			select,
+			textarea {
+				border: 1px solid var(--border);
+				border-radius: 6px;
+				padding: 6px 10px;
+				font-size: 13px;
+				font-family: inherit;
+			}
+			input[type='number'] { width: 70px; }
+			input[type='text'] { flex: 1; min-width: 200px; }
+			textarea {
+				width: 100%;
+				min-height: 70px;
+				resize: vertical;
+			}
+			.hint {
+				font-size: 12px;
+				color: var(--text2);
+			}
+			.model-item {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 10px 0;
+				border-bottom: 1px solid var(--border);
+			}
+			.model-item:last-child { border-bottom: none; }
+			.progress {
+				height: 6px;
+				border-radius: 3px;
+				background: #e8eaed;
+				margin: 6px 0;
+				overflow: hidden;
+			}
+			.progress > div {
+				height: 100%;
+				width: 0%;
+				background: var(--primary);
+				transition: width 0.2s;
+			}
+			button {
+				border: 1px solid var(--border);
+				border-radius: 6px;
+				background: #fff;
+				padding: 5px 14px;
+				cursor: pointer;
+				font-size: 13px;
+			}
+			button.primary {
+				background: var(--primary);
+				border-color: var(--primary);
+				color: #fff;
+			}
+			button.danger { color: #d93025; }
+			button:disabled { opacity: 0.5; cursor: default; }
+			.saved {
+				color: #188038;
+				font-size: 12px;
+				opacity: 0;
+				transition: opacity 0.3s;
+			}
+			.saved.show { opacity: 1; }
+			blockquote {
+				margin: 8px 0;
+				padding: 8px 12px;
+				background: #f1f3f4;
+				border-left: 3px solid var(--primary);
+				font-size: 12px;
+				color: var(--text2);
+			}
+			a { color: var(--primary); text-decoration: none; }
+			.extra-entry {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				flex-wrap: wrap;
+				margin-top: 12px;
+			}
+			#extra-panel {
+				margin-top: 12px;
+				padding-top: 12px;
+				border-top: 1px dashed var(--border);
+			}
+			.extra-actions {
+				display: flex;
+				align-items: center;
+				gap: 14px;
+				margin-top: 10px;
+				font-size: 12px;
+			}
+			.switch {
+				position: relative;
+				display: inline-block;
+				width: 40px;
+				height: 22px;
+				flex: none;
+			}
+			.switch input { opacity: 0; width: 0; height: 0; }
+			.switch .slider {
+				position: absolute;
+				inset: 0;
+				background: #bdc1c6;
+				border-radius: 22px;
+				cursor: pointer;
+				transition: background 0.2s;
+			}
+			.switch .slider::before {
+				content: '';
+				position: absolute;
+				left: 3px;
+				top: 3px;
+				width: 16px;
+				height: 16px;
+				background: #fff;
+				border-radius: 50%;
+				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+				transition: transform 0.2s;
+			}
+			.switch input:checked + .slider { background: var(--primary); }
+			.switch input:checked + .slider::before { transform: translateX(18px); }
+			.switch input:focus-visible + .slider {
+				outline: 2px solid var(--primary);
+				outline-offset: 2px;
+			}
+			.state { font-size: 13px; color: var(--text2); min-width: 48px; }
+			.state.on { color: #188038; }
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>离线双语翻译</h1>
+			<div class="subtitle">完全离线的双语对照网页翻译 · Bergamot 本地引擎 · 翻译过程零网络请求</div>
+
+			<div class="card">
+				<h2>译文样式</h2>
+				<div class="row">
+					<label class="main">字号</label>
+					<input type="number" id="fontSize" min="10" max="28" step="1" /> px
+				</div>
+				<div class="row">
+					<label class="main">文字颜色</label>
+					<input type="text" id="textColor" placeholder="#8b8b8b" />
+					<span class="hint">如 #8b8b8b（灰）或 #1a73e8（蓝）</span>
+				</div>
+				<div class="row">
+					<label class="main">悬停译文高亮原文</label>
+					<input type="checkbox" id="hoverHighlight" />
+				</div>
+			</div>
+
+			<div class="card">
+				<h2>翻译方向</h2>
+				<div class="row">
+					<label class="main">默认方向</label>
+					<select id="translateDirection">
+						<option value="auto">自动识别（中文页→英，其他→中）</option>
+						<option value="enzh">英语 → 中文</option>
+						<option value="zhen">中文 → 英语</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="card">
+				<h2>划词翻译</h2>
+				<div class="row">
+					<label class="main" for="selectTranslateEnabled">选中文本后弹出译文</label>
+					<label class="switch">
+						<input type="checkbox" id="selectTranslateEnabled" />
+						<span class="slider"></span>
+					</label>
+					<span class="state" id="selectTranslateState">已开启</span>
+				</div>
+				<p class="hint" style="margin: 4px 0 0">
+					关闭后划词与右键菜单「翻译选中文本」都不再弹窗；开启时也只有选中内容属于当前翻译方向的源语言才自动弹出。开关即时生效，无需点保存。
+				</p>
+			</div>
+
+			<div class="card">
+				<h2>语言包（离线模型）</h2>
+				<p class="hint">
+					模型下载一次后永久缓存，翻译完全在本地进行。enzh/zhen 模型来自
+					Mozilla（Firefox 翻译功能官方渠道），其他语言来自 Bergamot 项目。
+				</p>
+				<div id="model-list"></div>
+
+				<div class="extra-entry">
+					<button id="more-packs" type="button">更多语言包 ▾</button>
+					<span class="hint">Bergamot 官方仓库，按需下载（每个约 20–37 MB）</span>
+				</div>
+				<div id="extra-panel" hidden>
+					<p class="hint" id="extra-status">正在获取语言包列表…</p>
+					<div id="extra-list"></div>
+					<div class="extra-actions">
+						<button id="extra-refresh" type="button">刷新列表</button>
+						<a href="https://bergamot.s3.amazonaws.com/models/index.json" target="_blank" rel="noopener">查看官方索引</a>
+					</div>
+				</div>
+			</div>
+
+			<div class="card">
+				<h2>OCR 图片翻译</h2>
+				<div class="row">
+					<label class="main">识别语言</label>
+					<select id="ocrLangs"></select>
+					<span class="hint">首次使用对应语言时需下载识别数据</span>
+				</div>
+				<div class="row">
+					<label class="main">翻译方向</label>
+					<select id="ocrDirection">
+						<option value="enzh">英语 → 中文</option>
+						<option value="zhen">中文 → 英语</option>
+					</select>
+				</div>
+				<div class="row">
+					<label class="main">识别数据源</label>
+					<input type="text" id="ocrLangPath" placeholder="默认官方源，可自建镜像" />
+				</div>
+				<div class="row">
+					<span class="hint">
+						使用方法：<kbd>Alt+Shift+O</kbd> 框选屏幕区域，或右键图片选择"OCR 翻译此图片"。
+					</span>
+				</div>
+			</div>
+
+			<div class="card">
+				<h2>排除规则</h2>
+				<p class="hint">不翻译的页面区域，每行一个 CSS 选择器。默认已跳过代码块与输入框。</p>
+				<textarea id="excludeSelectors" placeholder="例如：&#10;.comment-box&#10;nav&#10;footer"></textarea>
+			</div>
+
+			<div class="card">
+				<h2>关于 · 隐私</h2>
+				<blockquote>
+					本扩展的翻译引擎（Bergamot WASM）与语言模型全部运行在本地，翻译过程
+					<b>零网络请求</b>。仅以下情况需要联网：首次下载语言模型、OCR 识别数据。
+				</blockquote>
+				<p style="font-size: 13px">
+					开源致谢：<br />
+					· <a href="https://github.com/translate-tools/linguist" target="_blank">Linguist</a>（BSD-3-Clause）— Bergamot 集成方案参考<br />
+					· <a href="https://github.com/browsermt/bergamot-translator" target="_blank">Bergamot Translator</a>（MPL-2.0）— 离线翻译引擎，v0.4.5<br />
+					· <a href="https://github.com/mozilla/firefox-translations-models" target="_blank">Firefox Translations Models</a>（CC-BY 等）— en↔zh 神经网络模型<br />
+					· <a href="https://github.com/naptha/tesseract.js" target="_blank">Tesseract.js</a>（Apache-2.0）— OCR 引擎<br />
+					· <a href="https://github.com/fishjar/kiss-translator" target="_blank">KISS Translator</a>（GPL-3.0）— 仅参考双语对照交互思路，未复制任何代码
+				</p>
+				<p class="hint">详细署名与许可文本见扩展目录中的 THIRD_PARTY_NOTICES.md</p>
+			</div>
+
+			<div class="row">
+				<button id="save" class="primary">保存设置</button>
+				<span class="saved" id="saved">已保存 ✓</span>
+			</div>
+		</div>
+
+		<script type="module" src="options.js"></script>
+	</body>
+</html>

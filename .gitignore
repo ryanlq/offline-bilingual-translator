@@ -1,0 +1,13 @@
+# 构建产物与暂存目录
+dist/
+.build/
+.cache/
+.icon-backup/
+
+# 本地工作记录（不进公开仓库）
+.workbuddy/
+
+# 编辑器 / 系统
+.DS_Store
+Thumbs.db
+*.log

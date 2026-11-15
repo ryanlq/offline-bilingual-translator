@@ -1,0 +1,85 @@
+{
+	"manifest_version": 3,
+	"name": "__MSG_extName__",
+	"short_name": "__MSG_extShortName__",
+	"version": "0.1.0",
+	"description": "__MSG_extDescription__",
+	"minimum_chrome_version": "116",
+	"default_locale": "zh_CN",
+	"icons": {
+		"16": "assets/icons/icon-16.png",
+		"32": "assets/icons/icon-32.png",
+		"48": "assets/icons/icon-48.png",
+		"128": "assets/icons/icon-128.png"
+	},
+	"action": {
+		"default_title": "__MSG_extName__",
+		"default_popup": "src/popup/index.html",
+		"default_icon": {
+			"16": "assets/icons/icon-16.png",
+			"32": "assets/icons/icon-32.png"
+		}
+	},
+	"options_ui": {
+		"page": "src/options/index.html",
+		"open_in_tab": true
+	},
+	"background": {
+		"service_worker": "src/background/service-worker.js",
+		"type": "module"
+	},
+	"content_security_policy": {
+		"extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+	},
+	"permissions": [
+		"offscreen",
+		"storage",
+		"unlimitedStorage",
+		"contextMenus",
+		"activeTab",
+		"tabs",
+		"declarativeNetRequest"
+	],
+	"host_permissions": [
+		"https://bergamot.s3.amazonaws.com/*",
+		"https://firefox-settings-attachments.cdn.mozilla.net/*",
+		"https://firefox.settings.services.mozilla.com/*",
+		"https://tessdata.projectnaptha.com/*"
+	],
+	"content_scripts": [
+		{
+			"matches": ["<all_urls>"],
+			"all_frames": true,
+			"js": [
+				"src/content/shared.js",
+				"src/content/text-collector.js",
+				"src/content/injector.js",
+				"src/content/page-translator.js",
+				"src/content/select-translator.js",
+				"src/content/ocr.js",
+				"src/content/main.js"
+			],
+			"run_at": "document_idle"
+		}
+	],
+	"commands": {
+		"toggle-page-translation": {
+			"suggested_key": { "default": "Alt+Shift+T" },
+			"description": "开/关当前页面双语对照翻译"
+		},
+		"ocr-screen-region": {
+			"suggested_key": { "default": "Alt+Shift+O" },
+			"description": "框选屏幕区域进行 OCR 翻译"
+		}
+	},
+	"web_accessible_resources": [
+		{
+			"resources": [
+				"vendor/bergamot/*",
+				"vendor/bergamot/*.*",
+				"vendor/tesseract/*"
+			],
+			"matches": ["<all_urls>"]
+		}
+	]
+}
