@@ -69,11 +69,11 @@ python -m http.server 8000 --directory docs   # 打开 http://localhost:8000/
 
 | 材料 | Chrome | Edge | 当前状态 |
 |------|--------|------|----------|
-| zip 包 | 必需 | 必需 | ✅ 已生成，双店通用 |
+| zip 包 | 必需 | 必需 | ✅ 已生成（纯 Node 打包，正斜杠路径），双店通用 |
 | 128×128 商店图标 | 必需 | 可作 logo | ✅ `assets/icons/icon-128.png` |
 | 300×300 方形 logo | — | **每种语言必需** | ✅ `store-assets/logo-300.png` |
 | 440×280 / 1400×560 宣传图 | 可选 | 可选 | ✅ `store-assets/` |
-| **至少 1 张 1280×800 截图** | **必需**（最多 5 张） | 可选（最多 6 张） | ❌ 需真机截图，不能用示意图 |
+| **至少 1 张 1280×800 截图** | **必需**（最多 5 张） | 可选（最多 6 张） | ✅ `store-assets/screenshots/{zh,en}/` 共 7 张真机截图（`tools/shots.mjs` 生成） |
 | 详细商品描述 | 必填 | **每种语言 250–10000 字符** | ✅ 中英两版文案见下 |
 | 简短描述 | 取自 manifest `description`（只读） | 同左（只读） | ✅ 已在 `_locales`，已去掉"中英"定语 |
 | 分类 | 必填（建议 Accessibility / Productivity） | 必填 | ❌ 提交时选择 |
@@ -83,6 +83,17 @@ python -m http.server 8000 --directory docs   # 打开 http://localhost:8000/
 | 测试说明 | Test instructions | Notes for certification | ✅ 文案见下 |
 
 图标素材来自 `tools/icon-source.png`（1254×1254 透明底插画）。生成脚本会重建 alpha 蒙版去掉抠图残留的彩色杂边，再居中裁成正方形；16/32 额外做中心裁切放大「中 / A」主体，避免缩成一团。换素材时依次运行 `python tools/make-icons.py`、`python tools/make-store-assets.py` 即可同步全部尺寸、商店 logo 与两张宣传图；首次运行会把旧素材备份到 `.icon-backup/`（已加入 `.gitignore`）。
+
+### 商店截图（tools/shots.mjs）
+
+`store-assets/screenshots/` 下的 7 张 1280×800 截图全部是**真机运行截图**：在 instabox-2 的 Debian Chromium（xvfb 无头显示器 + `--load-extension`，注意品牌版 Google Chrome 137+ 已忽略该参数）里加载发布包，真实下载模型、真实翻译后截取。zh 组 4 张（双语对照 hero / 划词 / OCR / 设置页），en 组 3 张（zh→en 对照 / 划词 / OCR）；Chrome 后台可按语言区域分别上传。踩坑要点（详见 `tools/shots.mjs` 头注释）：
+
+- **zip 路径分隔符**：PowerShell `Compress-Archive` 产的 zip 条目用 `\` 分隔，Linux/商店解包即坏；`tools/package.mjs` 已改为纯 Node zip 写入（deflate + UTF-8 文件名，零依赖）。
+- **扩展命令不能用 CDP 注入键盘触发**：`Input.dispatchKeyEvent` 不走浏览器加速键层，改走弹窗按钮同款路径（SW 里 `chrome.tabs.sendMessage`）。
+- **OCR 截图必须用无 viewport 仿真的标签页**：仿真坐标 ≠ `captureVisibleTab` 物理像素，裁剪会错位；出结果后再临时仿真 1280×800 截图。
+- **captureVisibleTab 需要手势激活 activeTab**：合成消息无手势，仅截图副本临时加 `<all_urls>` host 权限（发布包不含，真实用户按快捷键/右键有手势不受影响）。
+- **零高度的纯水平拖拽选区会让裁剪失败**：拖拽矩形必须有真实高度。
+- **维基页面 webfont 换载后仍会重排**，坐标要现场测；en 版 OCR 用本地静态大字页面最稳。
 
 > 注意：包里 `_locales/zh_CN` 与 `_locales/en` 两个语言目录会让 Edge 的 Store listings 出现**两行**，每行都要单独填 250+ 字符描述与上传 300×300 logo（可用页面上的 Duplicate 复制素材）。Chrome 的本地化描述则是可选但建议补齐。
 
@@ -253,7 +264,8 @@ privacy translator
 │   └── tesseract/          # Tesseract.js（Apache-2.0）
 ├── tools/
 │   ├── check.mjs           # 静态自检（清单/语法/权限/本地化/Shadow DOM 回归）
-│   ├── package.mjs         # 打包 dist/*.zip（打包前必过 check）
+│   ├── package.mjs         # 打包 dist/*.zip（纯 Node zip，打包前必过 check）
+│   ├── shots.mjs           # 商店 1280×800 真机截图（instabox-2 Chromium + xvfb）
 │   ├── verify-language-packs.mjs # 实测语言包：索引转换 / 下载 SHA-256 / WASM 引擎翻译
 │   ├── icon-source.png     # 图标源图（1254×1254 透明底，不进发布包）
 │   ├── make-icons.py       # 源图 → 各尺寸扩展图标 + logo-300 + 512 母版
