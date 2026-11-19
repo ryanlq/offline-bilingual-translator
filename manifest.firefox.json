@@ -1,0 +1,74 @@
+{
+	"manifest_version": 2,
+	"name": "__MSG_extName__",
+	"short_name": "__MSG_extShortName__",
+	"version": "0.1.0",
+	"description": "__MSG_extDescription__",
+	"default_locale": "zh_CN",
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "offline-bilingual-translator@ryanlq.dev",
+			"strict_min_version": "115.0"
+		}
+	},
+	"icons": {
+		"16": "assets/icons/icon-16.png",
+		"32": "assets/icons/icon-32.png",
+		"48": "assets/icons/icon-48.png",
+		"128": "assets/icons/icon-128.png"
+	},
+	"browser_action": {
+		"default_title": "__MSG_extName__",
+		"default_popup": "src/popup/index.html",
+		"default_icon": {
+			"16": "assets/icons/icon-16.png",
+			"32": "assets/icons/icon-32.png"
+		}
+	},
+	"options_ui": {
+		"page": "src/options/index.html",
+		"open_in_tab": true
+	},
+	"background": {
+		"page": "src/background/background.html",
+		"persistent": true
+	},
+	"content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
+	"permissions": [
+		"storage",
+		"unlimitedStorage",
+		"contextMenus",
+		"tabs",
+		"https://bergamot.s3.amazonaws.com/*",
+		"https://firefox-settings-attachments.cdn.mozilla.net/*",
+		"https://firefox.settings.services.mozilla.com/*",
+		"https://tessdata.projectnaptha.com/*"
+	],
+	"content_scripts": [
+		{
+			"matches": ["<all_urls>"],
+			"all_frames": true,
+			"js": [
+				"src/content/shared.js",
+				"src/content/text-collector.js",
+				"src/content/injector.js",
+				"src/content/page-translator.js",
+				"src/content/select-translator.js",
+				"src/content/ocr.js",
+				"src/content/main.js"
+			],
+			"run_at": "document_idle"
+		}
+	],
+	"commands": {
+		"toggle-page-translation": {
+			"suggested_key": { "default": "Alt+Shift+T" },
+			"description": "开/关当前页面双语对照翻译"
+		},
+		"ocr-screen-region": {
+			"suggested_key": { "default": "Alt+Shift+O" },
+			"description": "框选屏幕区域进行 OCR 翻译"
+		}
+	},
+	"web_accessible_resources": ["vendor/bergamot/*", "vendor/tesseract/*"]
+}

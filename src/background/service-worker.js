@@ -23,11 +23,18 @@ import {
 
 const OFFSCREEN_URL = 'src/offscreen/offscreen.html';
 
+// Firefox 事件页：后台自带 DOM，引擎（offscreen.js）随本页加载，
+// rpc.js 本地路由直调，无需（也无法）创建 offscreen 文档。
+// Chrome SW 无 document → 走 offscreen 路径。
+const LOCAL_ENGINE = typeof document !== 'undefined' && !chrome.offscreen?.createDocument;
+const IS_FIREFOX = chrome.runtime.getURL('/').startsWith('moz-extension://');
+
 /* ---------------- offscreen 管理 ---------------- */
 
 let creatingOffscreen = null;
 
 async function hasOffscreen() {
+	if (LOCAL_ENGINE) return true;
 	const contexts = await chrome.runtime.getContexts({
 		contextTypes: ['OFFSCREEN_DOCUMENT'],
 		documentUrls: [chrome.runtime.getURL(OFFSCREEN_URL)],
@@ -36,6 +43,7 @@ async function hasOffscreen() {
 }
 
 async function ensureOffscreen() {
+	if (LOCAL_ENGINE) return;
 	if (await hasOffscreen()) return;
 
 	if (!creatingOffscreen) {
@@ -53,6 +61,7 @@ async function ensureOffscreen() {
 }
 
 async function offscreenReady() {
+	if (LOCAL_ENGINE) return; // 引擎已随本页加载，rpcCall 走本地路由，无需 ping
 	// 创建后轮询 ping，避免 ready 事件先于订阅的竞态
 	for (let i = 0; i < 40; i++) {
 		await ensureOffscreen();
@@ -476,6 +485,8 @@ const CDN_UA_RULE = {
 };
 
 async function ensureCdnRule() {
+	// Firefox UA 本就能从 Mozilla CDN 正常下载，无需改写（且 MV2 下跳过 DNR）
+	if (IS_FIREFOX) return;
 	const existing = await chrome.declarativeNetRequest.getDynamicRules();
 	const hasRule = existing.rules?.some((r) => r.id === CDN_UA_RULE.id);
 	if (!hasRule) {

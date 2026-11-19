@@ -11,6 +11,10 @@ const CALL_PREFIX = 'rpc:call:';
 const RESP_PREFIX = 'rpc:resp:';
 const EVENT_PREFIX = 'rpc:event:';
 
+// 本地路由：Firefox 事件页中后台与引擎同上下文，rpcCall 直调本地 handler，
+// 绕过消息总线（sendMessage 不会送达本上下文的 onMessage 监听）。
+const localRoutes = new Map();
+
 let serial = 0;
 const pending = new Map();
 
@@ -21,6 +25,19 @@ const pending = new Map();
  * @returns {Promise<any>}
  */
 export function rpcCall(channel, payload) {
+	// 本地直调（Firefox 事件页）：引擎 handler 已通过 rpcListen 注册在本上下文
+	if (localRoutes.has(channel)) {
+		const handler = localRoutes.get(channel);
+		return Promise.resolve()
+			.then(() => handler(payload, null))
+			.then(
+				(result) => result,
+				(error) => {
+					throw error instanceof Error ? error : new Error(String(error));
+				},
+			);
+	}
+
 	return new Promise((resolve, reject) => {
 		const id = `${Date.now()}-${++serial}`;
 		pending.set(id, { resolve, reject, channel });
@@ -66,6 +83,7 @@ export function rpcCall(channel, payload) {
  * @returns {() => void} 注销函数
  */
 export function rpcListen(channel, handler) {
+	localRoutes.set(channel, handler); // 注册本地路由（Firefox 同上下文直调用）
 	const listener = (message, sender, sendResponse) => {
 		if (!message || typeof message.channel !== 'string') return false;
 
@@ -88,7 +106,10 @@ export function rpcListen(channel, handler) {
 	};
 
 	chrome.runtime.onMessage.addListener(listener);
-	return () => chrome.runtime.onMessage.removeListener(listener);
+	return () => {
+		chrome.runtime.onMessage.removeListener(listener);
+		localRoutes.delete(channel);
+	};
 }
 
 /**
