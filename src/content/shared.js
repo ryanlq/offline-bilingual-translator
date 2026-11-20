@@ -23,9 +23,10 @@
 		ocrLangPath: '',
 	};
 
-	/** 读取设置 */
+	/** 读取设置（Firefox MV2 storage.local 为回调约定，统一用回调风格） */
 	OBT.getSettings = async function () {
-		const { settings } = await chrome.storage.local.get('settings');
+		const stored = await new Promise((resolve) => chrome.storage.local.get('settings', resolve));
+		const { settings } = stored || {};
 		return { ...DEFAULT_SETTINGS, ...settings };
 	};
 
@@ -33,7 +34,7 @@
 	OBT.saveSettings = async function (patch) {
 		const current = await OBT.getSettings();
 		const settings = { ...current, ...patch };
-		await chrome.storage.local.set({ settings });
+		await new Promise((resolve) => chrome.storage.local.set({ settings }, resolve));
 		return settings;
 	};
 
@@ -65,9 +66,10 @@
 				}
 			};
 			chrome.runtime.onMessage.addListener(listener);
-			chrome.runtime
-				.sendMessage({ channel: CALL_PREFIX + channel, id, payload })
-				.then((resp) => {
+			const p = chrome.runtime
+				.sendMessage({ channel: CALL_PREFIX + channel, id, payload });
+			if (p && typeof p.then === 'function') {
+				p.then((resp) => {
 					if (resp && typeof resp === 'object' && resp.channel === RESP_PREFIX && resp.id === id) {
 						chrome.runtime.onMessage.removeListener(listener);
 						if (resp.error) {
@@ -77,11 +79,9 @@
 						}
 					}
 					// 其余情况（无响应或由其它上下文回传）：保持等待广播 RESP
-				})
-				.catch((err) => {
-					chrome.runtime.onMessage.removeListener(listener);
-					reject(err);
 				});
+			}
+			// Firefox MV2 回调约定：sendMessage 返回 undefined，响应由上方广播监听回传
 		});
 	};
 

@@ -176,17 +176,22 @@
 			this.ensureContainer();
 			this.popup.querySelector('.original').textContent = '';
 			this.popup.querySelector('.translation').textContent = '翻译中…';
-			this.popup.style.left = `${Math.min(x, window.innerWidth - 500)}px`;
-			this.popup.style.top = `${Math.min(y + window.scrollY, document.body.scrollHeight)}px`;
-			this.container.style.display = 'block';
+			this.place(x, y);
 		}
 
 		showResult(original, translation, x, y) {
 			this.ensureContainer();
 			this.popup.querySelector('.original').textContent = original.slice(0, 300);
 			this.popup.querySelector('.translation').textContent = translation;
-			this.popup.style.left = `${Math.max(4, Math.min(x, window.innerWidth - 500))}px`;
-			this.popup.style.top = `${Math.min(y + window.scrollY, document.body.scrollHeight)}px`;
+			this.place(x, y);
+		}
+
+		/** 定位：水平钳制在视口内，垂直保证弹窗（高≤320px）完整可见 */
+		place(x, y) {
+			const left = Math.max(4, Math.min(x, window.innerWidth - 500));
+			const top = Math.max(4, Math.min(y, window.innerHeight - 330));
+			this.popup.style.left = `${left}px`;
+			this.popup.style.top = `${top + window.scrollY}px`;
 			this.container.style.display = 'block';
 		}
 

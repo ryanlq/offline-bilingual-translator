@@ -52,25 +52,30 @@
 		});
 	}
 
-	/** 开/关页面双语翻译 */
+	/** 开/关页面双语翻译（加锁防重入：消息重复投递或快速连击只算一次） */
+	let toggleBusy = false;
 	async function togglePageTranslation() {
-		if (!pageTranslator) return;
-		const settings = await OBT.getSettings();
-
-		if (pageTranslator.isRun()) {
-			pageTranslator.stop();
-			return;
-		}
-
-		const direction = OBT.resolveDirection(
-			settings.translateDirection,
-			document.documentElement.lang,
-		);
+		if (toggleBusy) return;
+		toggleBusy = true;
 		try {
+			if (!pageTranslator) return;
+			const settings = await OBT.getSettings();
+
+			if (pageTranslator.isRun()) {
+				pageTranslator.stop();
+				return;
+			}
+
+			const direction = OBT.resolveDirection(
+				settings.translateDirection,
+				document.documentElement.lang,
+			);
 			await pageTranslator.run(direction, settings);
 		} catch (err) {
 			console.error('OBT 页面翻译启动失败:', err);
 			alert(`双语翻译启动失败：${err.message}\n请检查是否已下载对应语言包（工具栏 → 设置）`);
+		} finally {
+			toggleBusy = false;
 		}
 	}
 

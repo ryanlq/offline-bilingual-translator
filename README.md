@@ -1,6 +1,6 @@
 # 离线双语翻译（Offline Bilingual Translator）
 
-**完全离线的双语对照网页翻译浏览器扩展** —— Bergamot 本地引擎，翻译过程零网络请求，附加 OCR 图片翻译与划词翻译。
+**完全离线的双语对照网页翻译浏览器扩展**（Chrome/Edge 116+ · Firefox 115+）—— Bergamot 本地引擎，翻译过程零网络请求，附加 OCR 图片翻译与划词翻译。
 
 > 官网：https://ryanlq.github.io/offline-bilingual-translator/ · 源码：https://github.com/ryanlq/offline-bilingual-translator · 许可：Apache-2.0
 
@@ -19,6 +19,8 @@
 
 ## 安装使用（开发者模式加载）
 
+**Chrome / Edge：**
+
 1. 下载或解压发布包（`dist/offline-bilingual-translator-v*.zip`，由 `node tools/package.mjs` 生成）
 2. 打开 Chrome/Edge 116+ → `chrome://extensions`（Edge 为 `edge://extensions`）
 3. 开启右上角 **开发者模式**
@@ -26,6 +28,12 @@
 5. 点击工具栏图标 → **下载模型**（如"英语 → 中文"，约 45 MB，一次性）
 6. 在任意英文网页按 `Alt+Shift+T`，体验双语对照翻译
 7. 需要其它语言：设置页 → 语言包 → **更多语言包** → 下载 → 在「翻译方向」中选用
+
+**Firefox（115+）：**
+
+1. 发布包为 `dist/offline-bilingual-translator-firefox-v*.zip`（由 `node tools/build-firefox.mjs` 生成），改后缀 `.xpi` 可直接上传 AMO
+2. 本地试用：`about:debugging#/runtime/this-firefox` → **临时载入附加组件** → 选择 zip（临时载入重启后失效；签名后才可永久安装）
+3. 下载模型后用法与 Chrome 版一致（后台为持久事件页，引擎直载后台页，无 offscreen）
 
 > 语言包只在**下载那一刻**联网；翻译过程零网络请求。官方索引拉取失败时会回退到上次缓存，已安装的语言包不受影响。
 
@@ -395,8 +403,8 @@ uken "Привіт, світе"             → "Hi, World"
 
 ## 已知限制与后续路线
 
-- **MVP 阶段**：桌面 Chrome/Edge 116+（`chrome.runtime.getContexts` 要求）；内置 en↔zh 双向，其余语言对按需从「更多语言包」下载（仅覆盖 Bergamot 官方仓库现有的 20 个语言对）
-- **Firefox 支持（后续计划，当前包不兼容）**：Firefox 的 MV3 用 event page 而非 `background.service_worker`，且没有 `chrome.offscreen` API / `offscreen` 权限，而本项目的引擎、模型缓存与 OCR 全部跑在 offscreen 文档里。Firefox 后台页自带 DOM，可直接承载引擎，因此不需要 offscreen。移植待办：拆两份 manifest、加一层 DOM 宿主适配、封装 `browser.*` 命名空间、跳过 CDN UA 改写规则、加 `browser_specific_settings.gecko` ID 并做 AMO 签名。
+- **MVP 阶段**：桌面 Chrome/Edge 116+ 与 Firefox 115+；内置 en↔zh 双向，其余语言对按需从「更多语言包」下载（仅覆盖 Bergamot 官方仓库现有的 20 个语言对）
+- **Firefox 已支持（MV2 移植）**：后台为持久事件页，引擎直接在后台页运行（无 offscreen），回调风格 API 由 `src/shared/firefox-shim.js` 统一 promisify（恒走回调形式单次调用），`src/shared/rpc.js` 本地路由让后台对引擎直调绕过消息总线；模型下载、双语对照、划词、OCR 全链路在 Firefox ESR 153 真机 e2e 验证通过（`tools/ff-e2e.mjs`）。剩余事项：AMO 签名后上架
 - 官方仓库之外的语言对（如 ja→zh 需经日→英→中中转）仍需手工在 `src/shared/models-registry.js` 补充条目；「更多语言包」只列官方索引里的单向语言对
 - 「更多语言包」列表首次展开需联网拉取索引；索引失败且无本地缓存时列表为空，已安装语言包仍可离线使用
 - **closed Shadow DOM 站点无法翻译**（如部分用 Web Components 重构的页面）：
