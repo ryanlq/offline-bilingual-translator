@@ -219,7 +219,7 @@ async function ensureModelLoaded(direction, { streamId, force = false } = {}) {
 }
 
 /** 翻译一批文本 */
-async function translateTexts(texts, from, to, { streamId } = {}) {
+async function translateTexts(texts, from, to, { streamId, html = false } = {}) {
 	if (!Array.isArray(texts) || texts.length === 0) return [];
 
 	const direction = { from, to };
@@ -230,6 +230,7 @@ async function translateTexts(texts, from, to, { streamId } = {}) {
 		rpcCall('engine:translate', {
 			texts,
 			direction,
+			html,
 		}).then((results) => results.map((r) => r.target.text));
 
 	try {
@@ -248,8 +249,8 @@ async function translateTexts(texts, from, to, { streamId } = {}) {
 
 /* ---------------- RPC：翻译 ---------------- */
 
-rpcListen('translate:texts', ({ texts, from, to, streamId }) =>
-	translateTexts(texts, from, to, { streamId }),
+rpcListen('translate:texts', ({ texts, from, to, streamId, html }) =>
+	translateTexts(texts, from, to, { streamId, html }),
 );
 
 /* ---------------- RPC：模型管理 ---------------- */

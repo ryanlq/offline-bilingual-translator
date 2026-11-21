@@ -132,13 +132,24 @@
 			return host;
 		}
 
-		/** 设置某段落的译文 */
-		setTranslation(element, translated) {
+		/**
+		 * 设置某段落的译文
+		 * @param {Element} element
+		 * @param {string} translated 译文（纯文本或引擎返回的受限 HTML）
+		 * @param {{html?: boolean}} [options] html: translated 为 HTML 片段，净化后写入
+		 */
+		setTranslation(element, translated, { html = false } = {}) {
 			const host = this.hosts.get(element);
 			if (!host) return;
 			const root = this.roots.get(host);
 			const span = root?.querySelector('.obt-text');
-			if (span) span.textContent = translated;
+			if (!span) return;
+			if (html) {
+				span.textContent = '';
+				span.appendChild(sanitizeTranslationHtml(translated));
+			} else {
+				span.textContent = translated;
+			}
 		}
 
 		/** 显示加载指示 */
@@ -168,6 +179,24 @@
 				host.remove();
 			}
 			this.hosts.clear();
+		}
+
+		/**
+		 * 清理已脱离文档的段落宿主（SPA 路由后旧元素仍在 hosts Map 里强引用，长会话会泄漏）。
+		 * 由 PageTranslator.collectNew 周期性调用；宿主 remove 时也顺带清掉译文高亮样式。
+		 */
+		sweepRemoved() {
+			let removed = 0;
+			for (const [element, host] of this.hosts) {
+				if (!element.isConnected) {
+					host.remove();
+					this.roots.delete(host);
+					this.hostToElement.delete(host);
+					this.hosts.delete(element);
+					removed++;
+				}
+			}
+			return removed;
 		}
 
 		get isBusy() {
@@ -217,6 +246,41 @@
 				this._highlighted = null;
 			}
 		}
+	}
+
+	/** 译文输出允许保留的内联标签（其余剥壳保字，防引擎 HTML 子集外的东西破坏页面） */
+	const ALLOWED_OUTPUT_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'SPAN', 'SMALL', 'SUB', 'SUP', 'ABBR', 'A']);
+
+	/**
+	 * 净化引擎返回的 HTML 片段：白名单标签重建，属性只留 a[href] 且仅 http(s)。
+	 * 输入来自本地 WASM 引擎（非网页内容），但 bergamot HTML 子集有限，
+	 * 输出结构不可信，必须过一遍白名单才能进 shadow DOM。
+	 */
+	function sanitizeTranslationHtml(html) {
+		const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+		const frag = document.createDocumentFragment();
+		const build = (from, to) => {
+			for (const node of from.childNodes) {
+				if (node.nodeType === Node.TEXT_NODE) {
+					to.appendChild(document.createTextNode(node.nodeValue));
+					continue;
+				}
+				if (node.nodeType !== Node.ELEMENT_NODE) continue;
+				if (!ALLOWED_OUTPUT_TAGS.has(node.tagName)) {
+					build(node, to); // 剥壳保字
+					continue;
+				}
+				const el = document.createElement(node.tagName.toLowerCase());
+				if (node.tagName === 'A') {
+					const href = node.getAttribute('href');
+					if (href && /^https?:/i.test(href)) el.setAttribute('href', href);
+				}
+				build(node, el);
+				to.appendChild(el);
+			}
+		};
+		build(doc.body, frag);
+		return frag;
 	}
 
 	OBT.BilingualInjector = BilingualInjector;

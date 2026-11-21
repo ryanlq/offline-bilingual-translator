@@ -96,6 +96,52 @@
 		return text;
 	}
 
+	/** 元素的 HTML 片段（仅保留内联标签，供引擎 html 模式使用） */
+	const INLINE_KEEP = new Set(['a', 'b', 'strong', 'i', 'em', 'u', 'span', 'small', 'sub', 'sup', 'abbr']);
+
+	function escapeHtml(text) {
+		return String(text)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;');
+	}
+
+	function collectHtml(element) {
+		const parts = [];
+		const walk = (node) => {
+			for (const child of node.childNodes) {
+				if (child.nodeType === Node.TEXT_NODE) {
+					parts.push(escapeHtml(child.nodeValue));
+					continue;
+				}
+				if (child.nodeType !== Node.ELEMENT_NODE) continue;
+				const tag = child.tagName.toLowerCase();
+				if (SKIP_TAGS.has(tag)) continue;
+				// img alt 是正文的一部分（与 collectText 口径一致）
+				if (tag === 'img') {
+					const alt = (child.getAttribute('alt') || '').trim();
+					if (alt) parts.push(` ${escapeHtml(alt)} `);
+					continue;
+				}
+				const display = getComputedStyle(child).display;
+				if (display === 'none') continue;
+				// 块级子元素的文本由其自身作为叶子收集，避免重复
+				if (display === 'block' || display === 'flex' || display === 'grid' || display === 'contents') continue;
+				if (INLINE_KEEP.has(tag)) {
+					parts.push(`<${tag}>`);
+					walk(child);
+					parts.push(`</${tag}>`);
+				} else {
+					// 其它内联标签（mark/cite/dfn…）：剥壳保字，减少引擎解析负担
+					walk(child);
+				}
+			}
+		};
+		walk(element);
+		// br 不交给引擎（bergamot HTML 子集未覆盖），当空白折叠掉
+		return parts.join(' ').replace(/\s+/g, ' ').trim();
+	}
+
 	/** 是否为"有意义的文本"（包含至少 2 个连续字母或 1 个 CJK 字符） */
 	function isMeaningful(text, minLength) {
 		if (!text || text.trim().length < (minLength ?? 4)) return false;
@@ -105,12 +151,13 @@
 	}
 
 	/**
-	 * 收集页面所有可翻译段落
-	 * @param {{excludeSelectors?: string[], minLength?: number}} options
+	 * 收集页面可翻译段落
+	 * @param {{excludeSelectors?: string[], minLength?: number, roots?: Element[]|null}} options
+	 *   roots: 增量模式——只从这些变化子树找（MutationObserver 用）；缺省时全文档扫描。
 	 * @returns {{element: Element, text: string}[]}
 	 */
 	OBT.collectParagraphs = function (options = {}) {
-		const { excludeSelectors = [], minLength = 4 } = options;
+		const { excludeSelectors = [], minLength = 4, roots = null } = options;
 		const results = [];
 
 		const consider = (element) => {
@@ -122,45 +169,55 @@
 			results.push({ element, text });
 		};
 
-		const walk = (container) => {
-			for (const element of container.children) {
-				if (SKIP_TAGS.has(element.tagName.toLowerCase())) continue;
-				if (element.closest('pre, code, [contenteditable="true"]')) continue;
-				if (isExcluded(element, excludeSelectors)) continue;
-				if (!isVisible(element)) continue;
+		const handleElement = (element) => {
+			if (SKIP_TAGS.has(element.tagName.toLowerCase())) return;
+			if (element.closest('pre, code, [contenteditable="true"]')) return;
+			if (isExcluded(element, excludeSelectors)) return;
+			if (!isVisible(element)) return;
 
-				// open shadow root 中的内容同样收集（closed 无法穿透）
-				if (element.shadowRoot) walk(element.shadowRoot);
+			// open shadow root 中的内容同样收集（closed 无法穿透）
+			if (element.shadowRoot) walk(element.shadowRoot);
 
-				const display = displayMode(element);
+			const display = displayMode(element);
 
-				// display:contents 的元素自身不产生盒子，直接下钻
-				if (display === 'contents') {
+			// display:contents 的元素自身不产生盒子，直接下钻
+			if (display === 'contents') {
+				walk(element);
+				return;
+			}
+
+			if (!display.startsWith('inline') && display !== 'none') {
+				// 块级：是容器就下钻，否则作为叶子段落
+				if (hasBlockDescendant(element)) {
 					walk(element);
-					continue;
+				} else {
+					consider(element);
 				}
-
-				if (!display.startsWith('inline') && display !== 'none') {
-					// 块级：是容器就下钻，否则作为叶子段落
-					if (hasBlockDescendant(element)) {
-						walk(element);
-					} else {
-						consider(element);
-					}
-				} else if (display !== 'none' && hasBlockDescendant(element)) {
-					// 内联元素里偶发块级子元素（如 <a> 卡片）：继续下钻
-					walk(element);
-				}
+			} else if (display !== 'none' && hasBlockDescendant(element)) {
+				// 内联元素里偶发块级子元素（如 <a> 卡片）：继续下钻
+				walk(element);
 			}
 		};
 
-		if (document.body) walk(document.body);
+		const walk = (container) => {
+			for (const element of container.children) handleElement(element);
+		};
+
+		if (roots && roots.length) {
+			// 增量模式：变化子树自身按元素逻辑处理（可能本身是叶子或容器）
+			for (const root of roots) handleElement(root);
+		} else if (document.body) {
+			walk(document.body);
+		}
 
 		return results;
 	};
 
-	/** 暴露内部文本收集函数（供 PageTranslator 精确重取段落文本） */
+	/** 暴露内部收集函数（供 PageTranslator 按需取纯文本 / HTML 片段） */
 	OBT.__collectText = function (element) {
 		return collectText(element).replace(/\s+/g, ' ').trim();
+	};
+	OBT.__collectHtml = function (element) {
+		return collectHtml(element);
 	};
 })();

@@ -246,7 +246,7 @@ rpcListen('engine:ensureModel', async ({ direction, pairKey, fileSpecs, streamId
 	return { loaded: true, cached: false };
 });
 
-rpcListen('engine:translate', async ({ texts, direction }) => {
+rpcListen('engine:translate', async ({ texts, direction, html = false }) => {
 	const instance = await ensureEngine();
 	const key = JSON.stringify({ from: direction.from, to: direction.to });
 
@@ -258,7 +258,8 @@ rpcListen('engine:translate', async ({ texts, direction }) => {
 
 	return instance.translate({
 		models: [{ from: direction.from, to: direction.to }],
-		texts: texts.map((text) => ({ text, html: false })),
+		// html:true 时 texts 已是受限内联片段（页面侧已白名单化），引擎只保留标签结构
+		texts: texts.map((text) => ({ text, html })),
 	});
 });
 

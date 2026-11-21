@@ -14,6 +14,7 @@
 		textColor: '#8b8b8b',
 		backgroundColor: 'transparent',
 		hoverHighlight: true,
+		inlineFormat: true, // 译文保留粗体/斜体/链接等内联格式（引擎 html 模式）
 		translateDirection: 'auto', // auto: 根据页面语言选择方向
 		selectTranslateEnabled: true, // 划词翻译开关
 		excludeSelectors: [],
