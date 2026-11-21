@@ -13,6 +13,22 @@
 	/** 这些元素不能插兄弟节点，译文改为追加到元素内部 */
 	const CONTAINER_TAGS = new Set(['LI', 'DT', 'DD', 'TD', 'TH']);
 
+	/** shadow DOM 内部样式：千段页面共享一份 CSSStyleSheet，不再各持一份内联 <style> */
+	const SHADOW_CSS = `
+		:host { all: initial; display: block; }
+		.obt-translation {
+			display: block;
+			margin: 4px 0;
+			padding: 2px 0;
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+				"Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+			line-height: 1.6;
+			transition: background-color 0.15s;
+			user-select: none;
+			-webkit-user-select: none;
+		}
+	`;
+
 	class BilingualInjector {
 		constructor() {
 			/** @type {Map<Element, HTMLElement>} 原文元素 → 宿主元素 */
@@ -21,9 +37,10 @@
 			 * 宿主元素 → shadow root。
 			 * 注意：closed 模式下 element.shadowRoot 恒为 null，必须自行持有引用，
 			 * 否则后续所有样式更新与译文写入都会抛 TypeError。
-			 * @type {WeakMap<HTMLElement, ShadowRoot>}
-			 */
+			/** @type {WeakMap<HTMLElement, ShadowRoot>} */
 			this.roots = new WeakMap();
+			/** 宿主元素 → 原文元素（悬停反查用，避免每次 mouseover 线性扫 hosts） */
+			this.hostToElement = new WeakMap();
 			this.style = {
 				fontSize: 14,
 				textColor: '#8b8b8b',
@@ -31,7 +48,24 @@
 				hoverHighlight: true,
 			};
 			this._highlighted = null;
+			/** @type {CSSStyleSheet|null} 共享样式表（不可用时回退到逐 root 内联 <style>） */
+			this.sheet = null;
+			/** @type {HTMLTemplateElement|null} 译文块模板（克隆比 innerHTML 快且省内存） */
+			this.template = null;
 			this._bindHover();
+		}
+
+		/** 惰性创建共享样式表与模板（首次 inject 时） */
+		_ensureSharedAssets() {
+			if (this.template) return;
+			try {
+				this.sheet = new CSSStyleSheet();
+				this.sheet.replaceSync(SHADOW_CSS);
+			} catch {
+				this.sheet = null; // 极旧内核无 Constructable Stylesheets：退回逐 root <style>
+			}
+			this.template = document.createElement('template');
+			this.template.innerHTML = '<div class="obt-translation"><span class="obt-text"></span></div>';
 		}
 
 		updateStyle(style) {
@@ -60,6 +94,7 @@
 		 */
 		inject(element, original = '') {
 			if (this.hosts.has(element)) return this.hosts.get(element);
+			this._ensureSharedAssets();
 
 			const host = document.createElement('div');
 			host.setAttribute('data-obt-host', '');
@@ -69,25 +104,17 @@
 
 			const root = host.attachShadow({ mode: 'closed' });
 			this.roots.set(host, root);
-			root.innerHTML = `
-				<style>
-					:host { all: initial; display: block; }
-					.obt-translation {
-						display: block;
-						margin: 4px 0;
-						padding: 2px 0;
-						font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-							"Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-						line-height: 1.6;
-						transition: background-color 0.15s;
-						user-select: none;
-						-webkit-user-select: none;
-					}
-				</style>
-				<div class="obt-translation" data-original="${escapeHtml(original).slice(0, 200)}">
-					<span class="obt-text"></span>
-				</div>
-			`;
+			if (this.sheet) {
+				root.adoptedStyleSheets = [this.sheet];
+			} else {
+				const style = document.createElement('style');
+				style.textContent = SHADOW_CSS;
+				root.appendChild(style);
+			}
+			const node = this.template.content.cloneNode(true);
+			const block = node.querySelector('.obt-translation');
+			if (original) block.dataset.original = original.slice(0, 200);
+			root.appendChild(node);
 
 			this._applyStyle(host);
 
@@ -101,6 +128,7 @@
 			element.setAttribute('data-obt-original', '');
 
 			this.hosts.set(element, host);
+			this.hostToElement.set(host, element);
 			return host;
 		}
 
@@ -128,6 +156,7 @@
 			host.remove();
 			element.removeAttribute('data-obt-original');
 			this.hosts.delete(element);
+			this.hostToElement.delete(host);
 		}
 
 		/** 清空全部 */
@@ -156,7 +185,7 @@
 					(node) => node instanceof HTMLElement && node.hasAttribute?.('data-obt-host'),
 				);
 				if (host) {
-					const element = [...this.hosts.entries()].find(([, h]) => h === host)?.[0];
+					const element = this.hostToElement.get(host);
 					if (element) this._highlight(element);
 				} else {
 					this._unhighlight();
@@ -188,14 +217,6 @@
 				this._highlighted = null;
 			}
 		}
-	}
-
-	function escapeHtml(text) {
-		return String(text)
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;');
 	}
 
 	OBT.BilingualInjector = BilingualInjector;

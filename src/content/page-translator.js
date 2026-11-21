@@ -145,9 +145,13 @@ const MAX_BATCH_SIZE = 20;
 						});
 					} catch (err) {
 						console.warn('OBT 翻译失败:', err.message);
-						slice.forEach(({ element }) => {
-							this.injector.setTranslation(element, `⚠ 翻译失败（${err.message}）`);
-						});
+						// 失败片与其后所有分片统一标记：否则剩余段落永远停在「…」
+						const note = `⚠ 翻译失败（${err.message}）`;
+						for (let j = i; j < items.length; j += MAX_BATCH_SIZE) {
+							items.slice(j, j + MAX_BATCH_SIZE).forEach(({ element }) => {
+								this.injector.setTranslation(element, note);
+							});
+						}
 						return; // 模型缺失等错误对后续分片同样成立，不再重试
 					}
 				}

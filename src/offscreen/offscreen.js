@@ -53,7 +53,9 @@ class BergamotEngine {
 		this.module = await modulePromise;
 
 		// 胶水代码自带 mozIntGemm 优先 / wasm 内置实现的 gemm 回退链接逻辑
-		this.service = new this.module.BlockingService({ cacheSize: 0 });
+		// 句级缓存：导航/页眉/模板文案/重复列表项等重复句只翻一次，
+		// 长页面典型提速 10-30%（两千句约几 MB 内存）
+		this.service = new this.module.BlockingService({ cacheSize: 2000 });
 	}
 
 	/**
@@ -281,6 +283,49 @@ function loadScript(src) {
 	});
 }
 
+/* OCR worker 池：createWorker 的 WASM 初始化需 1~2 秒，每次识别都重建
+   是 OCR 慢的主因。按 langs+langPath 复用，空闲 5 分钟后回收释放内存。 */
+const OCR_WORKER_IDLE_MS = 5 * 60_000;
+/** @type {Map<string, {worker: Promise<object>, timer: ReturnType<typeof setTimeout>}>} */
+const ocrWorkers = new Map();
+
+function recycleOcrWorker(key) {
+	const entry = ocrWorkers.get(key);
+	if (!entry) return;
+	ocrWorkers.delete(key);
+	clearTimeout(entry.timer);
+	void Promise.resolve(entry.worker)
+		.then((w) => w.terminate())
+		.catch(() => {});
+}
+
+async function getOcrWorker(langs, langPath) {
+	const key = `${langs}|${langPath}`;
+	const cached = ocrWorkers.get(key);
+	if (cached) {
+		clearTimeout(cached.timer);
+		cached.timer = setTimeout(() => recycleOcrWorker(key), OCR_WORKER_IDLE_MS);
+		return cached.worker;
+	}
+	const creating = tesseractLib.createWorker(langs, 1, {
+		langPath,
+		workerPath: '../../vendor/tesseract/worker.min.js',
+		corePath: '../../vendor/tesseract',
+		// MV3 扩展页 CSP 只放行 script-src 'self'，blob: worker 会被拦截；
+		// 改为直接以同源脚本创建 Worker
+		workerBlobURL: false,
+		output: { text: true },
+		errorHandler: (err) => console.warn('OCR worker 错误:', err),
+	});
+	ocrWorkers.set(key, {
+		worker: creating,
+		timer: setTimeout(() => recycleOcrWorker(key), OCR_WORKER_IDLE_MS),
+	});
+	// 创建失败立即出池，避免缓存住一个永远 reject 的 Promise
+	creating.catch(() => recycleOcrWorker(key));
+	return creating;
+}
+
 /**
  * OCR 识别
  * @param {{imageDataUrl: string, langs: string, langPath?: string}} params
@@ -291,18 +336,9 @@ async function runOcr({ imageDataUrl, langs, langPath }) {
 		await loadScript('../../vendor/tesseract/tesseract.min.js');
 		tesseractLib = self.Tesseract;
 	}
-	const Tesseract = tesseractLib;
 
-	const worker = await Tesseract.createWorker(langs, 1, {
-		langPath: langPath || DEFAULT_OCR_LANG_PATH,
-		workerPath: '../../vendor/tesseract/worker.min.js',
-		corePath: '../../vendor/tesseract',
-		// MV3 扩展页 CSP 只放行 script-src 'self'，blob: worker 会被拦截；
-		// 改为直接以同源脚本创建 Worker
-		workerBlobURL: false,
-		output: { text: true },
-		errorHandler: (err) => console.warn('OCR worker 错误:', err),
-	});
+	const resolvedLangPath = langPath || DEFAULT_OCR_LANG_PATH;
+	const worker = await getOcrWorker(langs, resolvedLangPath);
 
 	try {
 		const result = await worker.recognize(imageDataUrl);
@@ -310,8 +346,10 @@ async function runOcr({ imageDataUrl, langs, langPath }) {
 			text: result.data.text.trim(),
 			confidence: result.data.confidence,
 		};
-	} finally {
-		await worker.terminate();
+	} catch (err) {
+		// worker 可能已损坏（WASM 崩溃等）：出池，下次重建
+		recycleOcrWorker(`${langs}|${resolvedLangPath}`);
+		throw err;
 	}
 }
 

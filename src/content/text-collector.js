@@ -78,6 +78,13 @@
 			} else if (node.nodeType === Node.ELEMENT_NODE) {
 				const tag = node.tagName.toLowerCase();
 				if (SKIP_TAGS.has(tag)) continue;
+				// 图片说明文字是正文的一部分（p/figure 内的 img 很常见）：
+				// img 本身无文本子节点，把 alt 拼进段落文本
+				if (tag === 'img') {
+					const alt = (node.getAttribute('alt') || '').trim();
+					if (alt) text += ` ${alt} `;
+					continue;
+				}
 				// 块级子元素的文本由其自身作为叶子收集，避免重复
 				const display = getComputedStyle(node).display;
 				if (display === 'none' || display === 'block' || display === 'flex' || display === 'grid') {
