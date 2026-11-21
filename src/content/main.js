@@ -63,6 +63,7 @@
 
 			if (pageTranslator.isRun()) {
 				pageTranslator.stop();
+				OBT.stopSessionKeepAlive();
 				return;
 			}
 
@@ -70,6 +71,7 @@
 				settings.translateDirection,
 				document.documentElement.lang,
 			);
+			OBT.startSessionKeepAlive();
 			await pageTranslator.run(direction, settings);
 		} catch (err) {
 			console.error('OBT 页面翻译启动失败:', err);

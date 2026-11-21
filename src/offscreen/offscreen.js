@@ -246,21 +246,71 @@ rpcListen('engine:ensureModel', async ({ direction, pairKey, fileSpecs, streamId
 	return { loaded: true, cached: false };
 });
 
-rpcListen('engine:translate', async ({ texts, direction, html = false }) => {
+/* ---------------- 翻译结果缓存与文本整理 ---------------- */
+
+/** 译文 LRU 缓存：重复段落/导航文案跨页跨批秒出，停开整页重翻也不重算 */
+const TRANSLATION_CACHE_LIMIT = 500;
+const translationCache = new Map(); // "enzh|h|<text>" → 译文
+
+/** html 模式下引擎会在 CJK 标点前残留空格（"服务器 。"）：输出侧统一整理 */
+function tidyCjkPunctuation(text) {
+	return text
+		.replace(/ +([，。！？；：、）】》」』])/g, '$1')
+		.replace(/ +([,.!?;:])(?=[\u4e00-\u9fff])/g, '$1')
+		.replace(/([。！？；]) +(?=[\u4e00-\u9fff])/g, '$1');
+}
+
+rpcListen('engine:translate', async ({ texts, direction, models, html = false }) => {
 	const instance = await ensureEngine();
-	const key = JSON.stringify({ from: direction.from, to: direction.to });
+	const modelList = models?.length ? models : [direction];
 
 	// 模型可能已被释放（删除语言包）或从未加载：显式报错，
 	// 避免把 undefined 传给 WASM 绑定导致引擎 abort
-	if (!instance.models.has(key)) {
-		throw new Error('翻译模型尚未加载，请先下载对应语言包');
+	for (const model of modelList) {
+		const key = JSON.stringify({ from: model.from, to: model.to });
+		if (!instance.models.has(key)) {
+			throw new Error('翻译模型尚未加载，请先下载对应语言包');
+		}
 	}
 
-	return instance.translate({
-		models: [{ from: direction.from, to: direction.to }],
+	// LRU 缓存命中（键含路径与模式：pivot 产物与直连产物区分开）
+	const pathId = modelList.map((m) => `${m.from}${m.to}`).join('+');
+	const cacheKeys = texts.map(
+		(text) => `${pathId}|${html ? 'h' : 't'}|${text}`,
+	);
+	const cached = cacheKeys.map((k) => translationCache.get(k));
+	if (cached.every((v) => v !== undefined)) {
+		for (const k of cacheKeys) {
+			const v = translationCache.get(k);
+			translationCache.delete(k);
+			translationCache.set(k, v); // LRU 触摸
+		}
+		return cached.map((text) => ({ target: { text } }));
+	}
+
+	const results = instance.translate({
+		models: modelList,
 		// html:true 时 texts 已是受限内联片段（页面侧已白名单化），引擎只保留标签结构
 		texts: texts.map((text) => ({ text, html })),
 	});
+
+	// 写缓存：命中项保留原值，未命中项整理后写入；超限淘汰最旧
+	const finalTo = modelList[modelList.length - 1].to;
+	cacheKeys.forEach((k, i) => {
+		const value =
+			cached[i] !== undefined
+				? cached[i]
+				: finalTo === 'zh'
+					? tidyCjkPunctuation(results[i].target.text)
+					: results[i].target.text;
+		translationCache.delete(k);
+		translationCache.set(k, value);
+		results[i].target.text = value;
+	});
+	while (translationCache.size > TRANSLATION_CACHE_LIMIT) {
+		translationCache.delete(translationCache.keys().next().value);
+	}
+	return results;
 });
 
 rpcListen('engine:freeModel', async ({ direction }) => {

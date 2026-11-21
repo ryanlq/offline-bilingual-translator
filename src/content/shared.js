@@ -100,6 +100,48 @@
 		return () => chrome.runtime.onMessage.removeListener(listener);
 	};
 
+	/* ---------------- 翻译会话保活（Port 心跳） ---------------- */
+
+	/* MV3 SW 空闲 30s 即休眠，每批翻译间的空档（用户滚动、阅读）会反复付
+	   唤醒成本。Port 上的消息会持续重置空闲计时器（Chrome 110+/Firefox
+	   event page 同理），翻译开启期间每 20s 一次心跳即可保活。 */
+	let keepAlivePort = null;
+	let keepAliveTimer = null;
+
+	/** 开启保活（翻译会话开始时调用；幂等） */
+	OBT.startSessionKeepAlive = function () {
+		if (keepAlivePort) return;
+		try {
+			keepAlivePort = chrome.runtime.connect({ name: 'obt-keepalive' });
+		} catch {
+			return; // 后台不可达等场景直接放弃，不影响功能
+		}
+		keepAlivePort.onDisconnect.addListener(() => {
+			clearInterval(keepAliveTimer);
+			keepAliveTimer = null;
+			keepAlivePort = null;
+		});
+		keepAliveTimer = setInterval(() => {
+			try {
+				keepAlivePort.postMessage({ ping: Date.now() });
+			} catch {
+				/* 端口已死：下次 disconnect 回调会清理 */
+			}
+		}, 20_000);
+	};
+
+	/** 结束保活（翻译关闭时调用；允许 SW 正常休眠） */
+	OBT.stopSessionKeepAlive = function () {
+		clearInterval(keepAliveTimer);
+		keepAliveTimer = null;
+		try {
+			keepAlivePort?.disconnect();
+		} catch {
+			/* 已断开 */
+		}
+		keepAlivePort = null;
+	};
+
 	/** 语言方向解析（任意四字母语言对，如 enzh / ende / fren） */
 	OBT.resolveDirection = function (setting, pageLanguage) {
 		if (setting && setting !== 'auto') {

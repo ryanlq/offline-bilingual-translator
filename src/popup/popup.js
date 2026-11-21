@@ -191,4 +191,8 @@ document.getElementById('ocr-region').addEventListener('click', async () => {
 	});
 
 	await renderModels();
+
+	// 预热：popup 打开即后台装配当前方向模型（仅已缓存的语言包，不偷偷下载），
+	// 用户点「翻译」时引擎通常已就绪，省掉冷启动的模型装配等待
+	rpcCall('models:warmup', { direction: settings.translateDirection }).catch(() => {});
 })();

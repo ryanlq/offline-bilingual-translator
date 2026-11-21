@@ -177,70 +177,117 @@ function getModelFileSpecs(direction, meta) {
 }
 
 const loadModelLocks = new Map();
-/** 已确认加载完成的语言对（SW 可能被回收，重启后由 offscreen 侧再兜底） */
+/** 已确认装配完成的路径（SW 可能被回收，重启后由 offscreen 侧再兜底） */
 const loadedPairs = new Set();
 
-async function ensureModelLoaded(direction, { streamId, force = false } = {}) {
-	const pairKey = `${direction.from}${direction.to}`;
+/**
+ * 解析翻译路径：直连语言包 → 经英语中转（pivot）。
+ * resolveModelMeta 会查内置/已安装/官方索引，结果按方向缓存避免每批重查。
+ */
+const translationPaths = new Map(); // "frzh" → { key, models: [{from,to}...] }
+async function resolveTranslationPath(from, to) {
+	const direct = `${from}${to}`;
+	const cached = translationPaths.get(direct);
+	if (cached) return cached;
 
-	// 已加载：直接返回，避免每批翻译都重新组装模型
-	if (!force && loadedPairs.has(pairKey)) return true;
+	const tryMeta = async (key) => {
+		const meta = await resolveModelMeta(key).catch(() => null);
+		return meta ? { from: key.slice(0, 2), to: key.slice(2) } : null;
+	};
+
+	let path = null;
+	if (await tryMeta(direct)) {
+		path = { key: direct, models: [{ from, to }] };
+	} else if (from !== 'en' && to !== 'en') {
+		// 经英语中转：from→en + en→to，两个语言包都可用才成立（如 fr→zh = fren + enzh）
+		const first = await tryMeta(`${from}en`);
+		const second = await tryMeta(`en${to}`);
+		if (first && second) {
+			path = {
+				key: `${direct}+${first.from}${first.to}+${second.from}${second.to}`,
+				models: [first, second],
+			};
+		}
+	}
+	if (!path) {
+		throw new Error(
+			`暂无 ${from}→${to} 的语言包${from !== 'en' && to !== 'en' ? '（也未找到可用的英语中转路径）' : ''}，请到设置页「更多语言包」下载`,
+		);
+	}
+	translationPaths.set(direct, path);
+	return path;
+}
+
+/** 与某个语言对相关的所有路径缓存态一并失效（删除/重下语言包时） */
+function invalidatePathCaches(pairKey) {
+	translationPaths.delete(pairKey);
+	for (const key of [...loadedPairs]) {
+		if (key.includes(pairKey)) loadedPairs.delete(key);
+	}
+}
+
+async function ensurePathLoaded(path, { streamId, force = false } = {}) {
+	// 已装配：直接返回，避免每批翻译都重新检查
+	if (!force && loadedPairs.has(path.key)) return true;
 
 	// 并发去重
-	if (loadModelLocks.has(pairKey)) return loadModelLocks.get(pairKey);
+	if (loadModelLocks.has(path.key)) return loadModelLocks.get(path.key);
 
 	const task = (async () => {
 		// 关键：先确保 offscreen 文档存在，否则 engine:* 调用无人应答
 		await offscreenReady();
 
-		// 注意：模型缓冲区（数十 MB ArrayBuffer）不能通过 chrome.runtime 消息
-		// 传输（JSON 序列化会破坏二进制），改传文件清单，由 offscreen 自行
-		// 从 IndexedDB 缓存读取（必要时下载）。
-		const meta = await resolveModelMeta(pairKey);
-		const { fileSpecs } = getModelFileSpecs(direction, meta);
-		await rpcCall('engine:ensureModel', {
-			direction,
-			pairKey,
-			fileSpecs,
-			config: meta.config ?? null,
-			streamId: streamId ?? `model-${pairKey}`,
-			force,
-		});
-		loadedPairs.add(pairKey);
+		// 逐个装配模型（直连 1 个 / pivot 2 个）。模型缓冲区（数十 MB ArrayBuffer）
+		// 不能经 chrome.runtime 消息传输（JSON 序列化会破坏二进制），改传文件
+		// 清单，由 offscreen 自行从 IndexedDB 缓存读取（必要时下载）。
+		for (const model of path.models) {
+			const pairKey = `${model.from}${model.to}`;
+			const meta = await resolveModelMeta(pairKey);
+			const { fileSpecs } = getModelFileSpecs(model, meta);
+			await rpcCall('engine:ensureModel', {
+				direction: model,
+				pairKey,
+				fileSpecs,
+				config: meta.config ?? null,
+				streamId: streamId ?? `model-${pairKey}`,
+				force,
+			});
+		}
+		loadedPairs.add(path.key);
 		return true;
 	})();
 
-	loadModelLocks.set(pairKey, task);
+	loadModelLocks.set(path.key, task);
 	try {
 		return await task;
 	} finally {
-		loadModelLocks.delete(pairKey);
+		loadModelLocks.delete(path.key);
 	}
 }
 
-/** 翻译一批文本 */
+/** 翻译一批文本（直连不可用时自动走英语中转） */
 async function translateTexts(texts, from, to, { streamId, html = false } = {}) {
 	if (!Array.isArray(texts) || texts.length === 0) return [];
 
-	const direction = { from, to };
-	const pairKey = `${from}${to}`;
-	await ensureModelLoaded(direction, { streamId });
+	const path = await resolveTranslationPath(from, to);
+	await ensurePathLoaded(path, { streamId });
 
 	const run = () =>
 		rpcCall('engine:translate', {
 			texts,
-			direction,
+			direction: { from, to },
+			models: path.models,
 			html,
 		}).then((results) => results.map((r) => r.target.text));
 
 	try {
 		return await run();
 	} catch (err) {
-		// offscreen 文档被回收会丢掉引擎内存，而 SW 的已加载标记还在：
+		// offscreen 文档被回收会丢掉引擎内存，而后台的已装配标记还在：
 		// 清标记、重新装配一次再试，避免整页翻译直接失败
 		if (/模型尚未加载/.test(err.message)) {
-			loadedPairs.delete(pairKey);
-			await ensureModelLoaded(direction, { streamId });
+			loadedPairs.delete(path.key);
+			await ensurePathLoaded(path, { streamId });
 			return run();
 		}
 		throw err;
@@ -252,6 +299,32 @@ async function translateTexts(texts, from, to, { streamId, html = false } = {}) 
 rpcListen('translate:texts', ({ texts, from, to, streamId, html }) =>
 	translateTexts(texts, from, to, { streamId, html }),
 );
+
+/** 预热：popup 打开即后台装配当前方向模型，点「翻译」时通常已就绪 */
+rpcListen('models:warmup', async ({ direction } = {}) => {
+	const pair =
+		direction && direction !== 'auto' && /^[a-z]{4}$/i.test(direction)
+			? direction.toLowerCase()
+			: 'enzh'; // auto 拿不到页面语言，按最常用的 en→zh 预热
+	const meta = await resolveModelMeta(pair).catch(() => null);
+	if (!meta) return { warmed: false };
+
+	// 只在已缓存的情况下预热（静默预热不偷偷下载几十 MB 流量）
+	const stored = await listStoredModels();
+	const parts = Object.values(meta.files).filter(
+		(spec) => !(meta.skipLex && spec.part === 'lex'),
+	);
+	const allCached = parts.every((spec) =>
+		stored.some((s) => s.direction === pair && s.part === spec.part),
+	);
+	if (!allCached) return { warmed: false, reason: 'not-cached' };
+
+	await ensurePathLoaded(
+		{ key: pair, models: [{ from: pair.slice(0, 2), to: pair.slice(2) }] },
+		{ streamId: `model-${pair}` },
+	);
+	return { warmed: true };
+});
 
 /* ---------------- RPC：模型管理 ---------------- */
 
@@ -328,7 +401,8 @@ rpcListen('models:download', async ({ key }) => {
 	loadedPairs.delete(pairKey);
 
 	// 下载 + 加载模型（完成或失败均返回；进度通过 rpcEmit 推送）
-	await ensureModelLoaded(direction, { streamId, force: true });
+	invalidatePathCaches(pairKey);
+	await ensurePathLoaded({ key: pairKey, models: [direction] }, { streamId, force: true });
 
 	// 扩展语言包安装成功后写入注册表，之后才能作为翻译方向被解析
 	if (!BUILTIN_MODELS[key]) {
@@ -341,16 +415,22 @@ rpcListen('models:download', async ({ key }) => {
 rpcListen('models:delete', async ({ key }) => {
 	const meta = await resolveModelMeta(key).catch(() => null);
 
-	// 先释放引擎内存，再删缓存，避免模型仍驻留而缓存已失效
+	// 先释放引擎内存，再删缓存，避免模型仍驻留而缓存已失效；
+	// 依赖该模型的所有路径（含 pivot 中转）一并失效
 	if (meta) {
-		if (loadedPairs.has(key)) {
-			await offscreenReady().catch(() => {});
-			await rpcCall('engine:freeModel', {
-				direction: { from: meta.from, to: meta.to },
-			}).catch(() => {});
+		const affectedPaths = [...loadedPairs].filter((k) => k.includes(key));
+		for (const pathKey of affectedPaths) {
+			const path = translationPaths.get(pathKey);
+			const models = path?.models ?? [{ from: meta.from, to: meta.to }];
+			for (const m of models) {
+				if (`${m.from}${m.to}`.includes(key)) {
+					await offscreenReady().catch(() => {});
+					await rpcCall('engine:freeModel', { direction: m }).catch(() => {});
+				}
+			}
 		}
-		loadedPairs.delete(key);
 	}
+	invalidatePathCaches(key);
 
 	await deleteModel(key);
 
@@ -540,6 +620,12 @@ chrome.runtime.onStartup.addListener(() => {
 
 chrome.storage.onChanged.addListener((changes, area) => {
 	if (area === 'local' && changes.settings) syncSelectionMenu();
+});
+
+// 内容脚本会话保活：Port 消息持续重置 MV3 SW 的 30s 空闲计时器，
+// 翻译会话期间避免休眠（每次唤醒要付 50-100ms 冷启动延迟）
+chrome.runtime.onConnect.addListener(() => {
+	// 仅需持有端口；消息到达本身就会保活
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
