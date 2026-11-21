@@ -404,7 +404,7 @@ uken "Привіт, світе"             → "Hi, World"
 ## 已知限制与后续路线
 
 - **MVP 阶段**：桌面 Chrome/Edge 116+ 与 Firefox 115+；内置 en↔zh 双向，其余语言对按需从「更多语言包」下载（仅覆盖 Bergamot 官方仓库现有的 20 个语言对）
-- **Firefox 已支持（MV2 移植）**：后台为持久事件页，引擎直接在后台页运行（无 offscreen），回调风格 API 由 `src/shared/firefox-shim.js` 统一 promisify（恒走回调形式单次调用），`src/shared/rpc.js` 本地路由让后台对引擎直调绕过消息总线；模型下载、双语对照、划词、OCR 全链路在 Firefox ESR 153 真机 e2e 验证通过（`tools/ff-e2e.mjs`）。剩余事项：AMO 签名后上架
+- **Firefox 已支持（MV2 移植）**：后台为持久事件页，引擎直接在后台页运行（无 offscreen），回调风格 API 由 `src/shared/firefox-shim.js` 统一 promisify（恒走回调形式单次调用），`src/shared/rpc.js` 本地路由让后台对引擎直调绕过消息总线；模型下载、双语对照、划词、OCR 全链路在 Firefox ESR 153 真机 e2e 验证通过（`tools/ff-e2e.mjs`）。**v0.1.0 已提交 AMO 审核（2026-11-21，Awaiting Review）**。上架要点：① AMO linter 会解析包内全部 JS（含 vendored 文件）——`tools/check.mjs` 第 8 项已做全量 `node --check`，曾拦住 tesseract-core.wasm.js 下载中断截断的问题；② 2025 起 manifest 须声明 `browser_specific_settings.gecko.data_collection_permissions`（本包为 `{"required": ["none"]}`），否则 linter 直接拒绝
 - 官方仓库之外的语言对（如 ja→zh 需经日→英→中中转）仍需手工在 `src/shared/models-registry.js` 补充条目；「更多语言包」只列官方索引里的单向语言对
 - 「更多语言包」列表首次展开需联网拉取索引；索引失败且无本地缓存时列表为空，已安装语言包仍可离线使用
 - **closed Shadow DOM 站点无法翻译**（如部分用 Web Components 重构的页面）：

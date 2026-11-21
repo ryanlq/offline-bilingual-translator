@@ -273,6 +273,31 @@ for (const entry of manifest.content_scripts ?? []) {
 }
 ok('content_scripts 声明有效');
 
+/* ---------------- 8. vendor JS 语法完整性 ---------------- */
+
+/* AMO linter 会解析包内全部 JS（含 vendored 库）；任何截断/损坏文件都会直接拒绝。
+   曾发生过 tesseract-core.wasm.js 下载中断截断（字符串未闭合）而本机 OCR 走
+   SIMD 变体从未暴露——这里用 node --check 把 vendor 与 src 的所有 JS 全部过一遍。 */
+{
+	const allJs = [
+		...(await walk(path.join(ROOT, 'vendor'), ['.js'])),
+		...(await walk(path.join(ROOT, 'src'), ['.js'])),
+	];
+	let checked = 0;
+	for (const file of allJs) {
+		const r = spawnSync(process.execPath, ['--check', file], { timeout: 60000 });
+		if (r.status !== 0) {
+			fail(
+				`JS 语法错误: ${rel(file)}\n${r.stderr.toString('utf8', 0, 300)}`, null,
+			);
+			problems.push(`JS 语法错误: ${rel(file)}`);
+		}
+		checked++;
+	}
+	if (!problems.some((p) => p.startsWith('JS 语法错误')))
+		ok(`vendor/src 全部 ${checked} 个 JS 语法完整（node --check）`);
+}
+
 /* ---------------- 汇总 ---------------- */
 
 console.log('');
