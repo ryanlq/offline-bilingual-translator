@@ -55,8 +55,7 @@ body {
 	align-items: center;
 	gap: 8px;
 	padding: 8px 14px;
-	background: color-mix(in srgb, var(--paper) 92%, transparent);
-	backdrop-filter: blur(6px);
+	background: var(--paper); /* 纯色：backdrop-filter 在长页滚动时是显著的卡顿源 */
 	border-bottom: 1px solid var(--line);
 }
 
@@ -164,7 +163,7 @@ body[data-style='columns'] .pair .tran {
 .pair.pending .tran .ph {
 	color: var(--ink-soft);
 	opacity: 0.6;
-	animation: pulse 1.2s ease-in-out infinite;
+	animation: pulse 1.2s ease-in-out 3; /* 有限次数：大量待译段落时无限动画持续触发合成 */
 }
 
 @keyframes pulse {

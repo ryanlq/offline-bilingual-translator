@@ -12,16 +12,17 @@ import { rpcCall } from '../shared/rpc.js';
 import { getSettings } from '../shared/settings.js';
 import { splitSentences } from '../shared/sentences.js';
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
 /* ---------------- 译文白名单净化 ---------------- */
 
 const ALLOWED_TAGS = new Set([
 	'B', 'STRONG', 'I', 'EM', 'U', 'SPAN', 'SMALL', 'SUB', 'SUP', 'ABBR', 'A', 'CODE',
 ]);
 
+// 复用同一个 template 解析（比每次 DOMParser 建整份文档便宜；template 内容脚本惰性，安全性等同）
+const parseTemplate = document.createElement('template');
+
 function sanitizeFragment(html) {
-	const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+	parseTemplate.innerHTML = html;
 	const frag = document.createDocumentFragment();
 	const build = (from, to) => {
 		for (const node of from.childNodes) {
@@ -45,7 +46,7 @@ function sanitizeFragment(html) {
 			to.appendChild(el);
 		}
 	};
-	build(doc.body, frag);
+	build(parseTemplate.content, frag);
 	return frag;
 }
 
@@ -64,13 +65,14 @@ function resolveDirection(setting, pageLang) {
 
 const contentEl = document.getElementById('content');
 const state = {
-	blocks: [], // 原文数据
-	pairs: [], // { block, el, sentences: [{orig, tranEl, text}], tranJoinedEl }
+	pairs: [], // { block, el, sentences: [{orig, tranEl, text}], tranEl, origEl, joinedDirty }
 	direction: { from: 'en', to: 'zh' },
 	total: 0,
 	done: 0,
 	title: '',
 };
+/** 阅读元素 → 段落条目（O(1) 反查，避免 flush/observer 循环里 O(n) 线性扫） */
+const pairByEl = new Map();
 
 function renderArticle(data) {
 	document.getElementById('a-title').textContent = data.title;
@@ -146,7 +148,9 @@ function renderArticle(data) {
 		pair.appendChild(sentWrap);
 
 		frag.appendChild(pair);
-		state.pairs.push({ block, el: pair, sentences, tranEl: tran, origEl: orig });
+		const pairItem = { block, el: pair, sentences, tranEl: tran, origEl: orig, joinedDirty: false };
+		state.pairs.push(pairItem);
+		pairByEl.set(pair, pairItem);
 		state.total += sentences.length;
 	}
 	contentEl.appendChild(frag);
@@ -159,14 +163,20 @@ function updateProgress() {
 		: '';
 }
 
-/** 段落句译全部到齐后，合并写入交替/双栏视图的整段译文 */
+/** 段落句译全部到齐后，合并写入交替/双栏视图的整段译文。
+ * 逐句风格下合并译文不可见：只标脏，切走逐句时批量重建（避免每句白做全量 DOM 重建）。 */
 function refreshJoined(pairItem) {
 	const texts = pairItem.sentences.map((s) => s.text);
 	if (texts.some((t) => t === null)) return;
+	if (document.body.dataset.style === 'sentence') {
+		pairItem.joinedDirty = true;
+		return;
+	}
 	const joined = texts.join('');
 	pairItem.tranEl.textContent = '';
 	pairItem.tranEl.appendChild(sanitizeFragment(joined));
 	pairItem.el.classList.remove('pending');
+	pairItem.joinedDirty = false;
 }
 
 /* ---------------- 懒翻译（句子为单元；进入视口才入队；按字符数分片） ---------------- */
@@ -189,6 +199,7 @@ function observePairs() {
 				if (seen.has(entry.target)) continue;
 				seen.add(entry.target);
 				queueEl.add(entry.target);
+				startKeepAlive(); // 有新内容待译即恢复心跳（幂等）
 			}
 			clearTimeout(batchTimer);
 			batchTimer = setTimeout(() => flush(), 250);
@@ -206,14 +217,17 @@ async function flush() {
 			// 展开段落里未翻译的句子
 			const sentences = [];
 			for (const el of queueEl) {
-				const item = state.pairs.find((p) => p.el === el);
+				const item = pairByEl.get(el);
 				if (!item) continue;
 				for (const s of item.sentences) {
 					if (s.text === null) sentences.push({ item, s, html: s.orig });
 				}
 			}
 			queueEl.clear();
-			if (!sentences.length) return;
+			if (!sentences.length) {
+				maybeStopKeepAlive();
+				return;
+			}
 
 			// 按字符数切一片（句子的 html 若无标签则转义后进 html 批，保护引擎解析器）
 			const esc = (t) =>
@@ -248,6 +262,7 @@ async function flush() {
 					// 有句子到齐的段落刷新合并译文
 					for (const { item } of slice) refreshJoined(item);
 					updateProgress();
+					maybeStopKeepAlive();
 				} catch (err) {
 					slice.forEach(({ s }) => {
 						s.text = '';
@@ -294,6 +309,12 @@ function wireToolbar() {
 	for (const btn of document.querySelectorAll('.style-btn')) {
 		btn.addEventListener('click', () => {
 			document.body.dataset.style = btn.dataset.style;
+			// 从逐句切走时：补建逐句期间标脏的段落级合并译文
+			if (btn.dataset.style !== 'sentence') {
+				for (const p of state.pairs) {
+					if (p.joinedDirty) refreshJoined(p);
+				}
+			}
 			for (const b of document.querySelectorAll('.style-btn'))
 				b.classList.toggle('active', b === btn);
 		});
@@ -382,6 +403,24 @@ function startKeepAlive() {
 			/* 端口已断 */
 		}
 	}, 20000);
+}
+
+/** 翻译全部完成（或队列清空）后停止心跳，让 SW 正常休眠；新内容入队时会重新启动 */
+function maybeStopKeepAlive() {
+	if (keepAlivePort && state.done >= state.total && queueEl.size === 0 && !flushing) {
+		stopKeepAlive();
+	}
+}
+
+function stopKeepAlive() {
+	clearInterval(keepAliveTimer);
+	keepAliveTimer = null;
+	try {
+		keepAlivePort?.disconnect();
+	} catch {
+		/* 已断开 */
+	}
+	keepAlivePort = null;
 }
 
 /* ---------------- 入口 ---------------- */
