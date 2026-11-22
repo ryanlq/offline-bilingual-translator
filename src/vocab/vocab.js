@@ -247,6 +247,21 @@ function wire() {
 		renderList();
 	});
 	$('anki-refresh').addEventListener('click', connectAnki);
+	$('anki-template').addEventListener('click', async () => {
+		try {
+			const result = await rpcCall('anki:createTemplate');
+			flash(result.created ? 'OBT 模板已创建 ✓' : 'OBT 模板已存在');
+			// 自动切到 OBT 模板与字段
+			await connectAnki();
+			$('anki-model').value = 'OBT 双语';
+			$('anki-model').dispatchEvent(new Event('change'));
+			$('anki-front').value = '原文';
+			$('anki-back').value = '译文';
+			saveAnkiSettings();
+		} catch (err) {
+			flash(`创建失败：${err.message.slice(0, 60)}`);
+		}
+	});
 	$('anki-push').addEventListener('click', pushToAnki);
 	$('anki-model').addEventListener('change', async () => {
 		const saved = await ankiSettings();

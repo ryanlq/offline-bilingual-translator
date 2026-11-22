@@ -587,7 +587,36 @@ rpcListen('anki:fields', async ({ modelName } = {}) => {
 	return { fieldNames: await ankiInvoke('modelFieldNames', { modelName }) };
 });
 
-rpcListen('anki:push', async ({ ids, deckName, modelName, frontField, backField, tags = [] } = {}) => {
+/** OBT 笔记模板定义（用户一键安装进自己的收藏，字段/模板/CSS 全部我们设计） */
+const OBT_MODEL_NAME = 'OBT 双语';
+const OBT_MODEL_SPEC = {
+	modelName: OBT_MODEL_NAME,
+	inOrderFields: ['原文', '译文', '来源', '发音'],
+	cardTemplates: [
+		{
+			Name: '双语卡',
+			Front:
+				'<div class="obt-front">{{原文}}</div>\n<div class="obt-audio">{{发音}}</div>',
+			Back:
+				'{{FrontSide}}\n<hr id="answer">\n<div class="obt-back">\n\t<div class="obt-translation">{{译文}}</div>\n\t{{#来源}}<div class="obt-source">来源：{{来源}}</div>{{/来源}}\n</div>',
+		},
+	],
+	css:
+		'.card {\n\tfont-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Georgia, serif;\n\tfont-size: 22px;\n\ttext-align: left;\n\tcolor: #1f2430;\n\tbackground-color: #ffffff;\n}\n\n.night_mode .card, .card.night_mode {\n\tcolor: #d7dce5;\n\tbackground-color: #16181d;\n}\n\n.obt-front {\n\tfont-size: 1.12em;\n\tline-height: 1.65;\n}\n\n.obt-audio {\n\tmargin-top: 10px;\n}\n\n.obt-translation {\n\tfont-size: 1.05em;\n\tline-height: 1.7;\n\tcolor: #1a73e8;\n}\n\n.night_mode .obt-translation, .card.night_mode .obt-translation {\n\tcolor: #7aa7ff;\n}\n\n.obt-source {\n\tfont-size: 0.68em;\n\tcolor: #8a93a3;\n\tmargin-top: 14px;\n}\n\nhr#answer {\n\tmargin: 18px 0;\n\tborder: none;\n\tborder-top: 1px solid #e5e7eb;\n}\n\n.night_mode hr#answer, .card.night_mode hr#answer {\n\tborder-top-color: #2a2f3a;\n}',
+	isCloze: false,
+};
+
+/** 一键创建 OBT 笔记模板（已存在则跳过） */
+rpcListen('anki:createTemplate', async () => {
+	const modelNames = await ankiInvoke('modelNames');
+	if (modelNames.includes(OBT_MODEL_NAME)) {
+		return { created: false, reason: 'exists' };
+	}
+	await ankiInvoke('createModel', OBT_MODEL_SPEC);
+	return { created: true };
+});
+
+rpcListen('anki:push', async ({ ids, deckName, modelName, frontField, backField, tags = [], audio = {} } = {}) => {
 	if (!Array.isArray(ids) || !ids.length) throw new Error('未选择条目');
 	if (!deckName || !modelName || !frontField || !backField) {
 		throw new Error('请先配置牌组、模板与字段');
@@ -601,15 +630,22 @@ rpcListen('anki:push', async ({ ids, deckName, modelName, frontField, backField,
 		const entry = byId.get(id);
 		if (!entry) continue;
 		try {
-			await ankiInvoke('addNote', {
-				note: {
-					deckName,
-					modelName,
-					fields: { [frontField]: entry.source, [backField]: entry.translation },
-					tags: ['obt', ...(Array.isArray(tags) ? tags : [])],
-					options: { allowDuplicate: false },
-				},
-			});
+			const fields = { [frontField]: entry.source, [backField]: entry.translation };
+			const note = {
+				deckName,
+				modelName,
+				fields,
+				tags: ['obt', ...(Array.isArray(tags) ? tags : [])],
+				options: { allowDuplicate: false },
+			};
+			// 音频协议：audio[id] = { data: base64, filename }（由本地 TTS 发音包生成后传入）
+			const audioSpec = audio?.[id];
+			if (audioSpec?.data && audioSpec?.filename) {
+				const soundName = audioSpec.filename;
+				fields['发音'] = `[sound:${soundName}]`;
+				note.audio = [{ data: audioSpec.data, filename: soundName, fields: ['发音'] }];
+			}
+			await ankiInvoke('addNote', { note });
 			added++;
 		} catch (err) {
 			if (/duplicate/i.test(err.message)) skipped++;
