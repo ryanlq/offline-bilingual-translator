@@ -200,6 +200,36 @@ body:not([data-style='sentence']) .pair .sentences {
 	background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
+.action-menu {
+	position: absolute;
+	z-index: 50;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+	padding: 4px;
+	min-width: 170px;
+}
+
+.menu-item {
+	border: none;
+	background: none;
+	text-align: left;
+	padding: 7px 12px;
+	font-size: 13px;
+	color: var(--ink);
+	cursor: pointer;
+	border-radius: 6px;
+	white-space: nowrap;
+}
+
+.menu-item:hover {
+	background: var(--paper-soft);
+	color: var(--accent);
+}
+
 .s-row.saved .s-orig::after {
 	content: ' ✓';
 	color: var(--accent);

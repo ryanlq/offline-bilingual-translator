@@ -477,7 +477,7 @@ async function saveVocab(source, translation, el) {
 }
 
 function wireVocabSave() {
-	// 逐句排版：点句行收藏该句；交替/双栏：点译文/原文收藏整段
+	// 点击句子行/段落：弹出操作菜单（加入生词本 / 朗读 / 复制），不再自动收藏
 	contentEl.addEventListener('click', (event) => {
 		const sRow = event.target.closest('.s-row');
 		const pairEl = event.target.closest('.pair');
@@ -488,11 +488,126 @@ function wireVocabSave() {
 			const idx = [...sRow.parentElement.children].indexOf(sRow);
 			const sentence = item.sentences[idx];
 			if (!sentence) return;
-			saveVocab(plainText(sentence.orig), sentence.text ?? '', sRow);
+			const source = plainText(sentence.orig);
+			const translation = sentence.text ?? '';
+			openMenu(sRow.getBoundingClientRect(), [
+				{ label: '➕ 加入生词本', action: () => saveVocab(source, translation, sRow) },
+				{ label: '🔊 朗读原句', action: () => speak(source) },
+				{ label: '🔊 朗读译文', action: () => speak(translation) },
+				{ label: '📋 复制原文与译文', action: () => copyText(source, translation) },
+			]);
 			return;
 		}
 		if (event.target.closest('.tran') || event.target.closest('.orig')) {
-			saveVocab(item.origEl.textContent.trim(), item.tranEl.textContent.trim(), item.tranEl);
+			const source = item.origEl.textContent.trim();
+			const translation = item.tranEl.textContent.trim();
+			openMenu(
+				(event.target.closest('.tran') ?? event.target.closest('.orig')).getBoundingClientRect(),
+				[
+					{ label: '➕ 加入生词本', action: () => saveVocab(source, translation, item.tranEl) },
+					{ label: '🔊 朗读原文', action: () => speak(source) },
+					{ label: '🔊 朗读译文', action: () => speak(translation) },
+					{ label: '📋 复制原文与译文', action: () => copyText(source, translation) },
+				],
+			);
 		}
 	});
+
+	// 划词收藏：正文内选中文字（含跨句/跨段）→ 菜单「加入生词本」（先翻译选中文本）
+	document.addEventListener('mouseup', (event) => {
+		if (event.target.closest('.action-menu')) return;
+		if (!event.target.closest('#content')) return;
+		const selection = window.getSelection();
+		const text = selection?.toString().trim();
+		if (!selection || selection.isCollapsed || !text || text.length < 2 || text.length > 2000) return;
+		if (!contentEl.contains(selection.anchorNode)) return;
+
+		const rect = selection.getRangeAt(0).getBoundingClientRect();
+		openMenu(rect, [
+			{
+				label: '➕ 加入生词本',
+				action: async () => {
+					flash('翻译选中文本…');
+					try {
+						const [translation] = await rpcCall('translate:texts', {
+							texts: [text],
+							from: state.direction.from,
+							to: state.direction.to,
+							html: false,
+						});
+						await saveVocab(text, translation ?? '', null);
+					} catch (err) {
+						flash(`收藏失败：${err.message.slice(0, 40)}`);
+					}
+				},
+			},
+			{ label: '🔊 朗读选中文本', action: () => speak(text) },
+			{ label: '📋 复制', action: () => copyText(text, '') },
+		]);
+	});
+}
+
+/* ---------------- 操作菜单 / TTS / 复制 ---------------- */
+
+let menuEl = null;
+function closeMenu() {
+	menuEl?.remove();
+	menuEl = null;
+}
+
+function openMenu(anchorRect, items) {
+	closeMenu();
+	menuEl = document.createElement('div');
+	menuEl.className = 'action-menu';
+	for (const item of items) {
+		const btn = document.createElement('button');
+		btn.className = 'menu-item';
+		btn.textContent = item.label;
+		btn.addEventListener('click', () => {
+			closeMenu();
+			item.action();
+		});
+		menuEl.appendChild(btn);
+	}
+	document.body.appendChild(menuEl);
+	let x = Math.max(8, Math.min(anchorRect.left, innerWidth - menuEl.offsetWidth - 8));
+	let y = anchorRect.bottom + 6;
+	if (y + menuEl.offsetHeight > innerHeight - 8) y = Math.max(8, anchorRect.top - menuEl.offsetHeight - 6);
+	menuEl.style.left = `${x}px`;
+	menuEl.style.top = `${y}px`;
+}
+
+document.addEventListener('mousedown', (event) => {
+	if (menuEl && !menuEl.contains(event.target)) closeMenu();
+}, true);
+document.addEventListener('keydown', (event) => {
+	if (event.key === 'Escape') closeMenu();
+}, true);
+addEventListener('scroll', () => closeMenu(), true);
+addEventListener('resize', () => closeMenu());
+
+/** 浏览器 TTS 朗读（系统语音，离线可用；按文本内容自动选语言） */
+function speak(text) {
+	const synth = window.speechSynthesis;
+	if (!synth) {
+		flash('当前浏览器不支持语音合成');
+		return;
+	}
+	const clean = text.replace(/\s+/g, ' ').trim();
+	if (!clean) return;
+	synth.cancel();
+	const utterance = new SpeechSynthesisUtterance(clean);
+	utterance.lang = /[\u4e00-\u9fff\u3040-\u30ff]/.test(clean) ? 'zh-CN' : 'en-US';
+	utterance.rate = 0.95;
+	synth.speak(utterance);
+}
+
+async function copyText(source, translation) {
+	const text = translation ? `${source}\n${translation}` : source;
+	try {
+		await navigator.clipboard.writeText(text);
+		flash('已复制');
+	} catch {
+		flash('复制失败');
+	}
 }
