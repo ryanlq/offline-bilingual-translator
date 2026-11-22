@@ -28,6 +28,20 @@
 			<label>背面字段<select id="anki-back"><option value="">—</option></select></label>
 			<label>附加标签<input id="anki-tags" type="text" placeholder="如 vocabulary" /></label>
 		</div>
+		<div class="grid" style="margin-top: 10px">
+			<label>TTS 发音包<select id="tts-voice">
+				<option value="expr-voice-2-f">女声 A（沉稳）</option>
+				<option value="expr-voice-2-m">男声 A（沉稳）</option>
+				<option value="expr-voice-3-f">女声 B（明亮）</option>
+				<option value="expr-voice-3-m">男声 B（明亮）</option>
+				<option value="expr-voice-4-f">女声 C</option>
+				<option value="expr-voice-4-m">男声 C</option>
+				<option value="expr-voice-5-f">女声 D</option>
+				<option value="expr-voice-5-m">男声 D</option>
+			</select></label>
+			<label>状态<span id="tts-status" class="status">检查中…</span></label>
+			<label>&nbsp;<button id="tts-install" class="btn" style="display: none">安装发音包（23MB）</button></label>
+		</div>
 		<div class="anki-actions">
 			<button id="anki-refresh" class="btn secondary">重新连接</button>
 			<button id="anki-template" class="btn secondary" title="在你的 Anki 里创建「OBT 双语」笔记模板（原文/译文/来源/发音字段 + 排版已设计好）">创建 OBT 模板</button>

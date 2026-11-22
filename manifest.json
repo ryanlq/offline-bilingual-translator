@@ -47,7 +47,8 @@
 		"https://firefox.settings.services.mozilla.com/*",
 		"https://tessdata.projectnaptha.com/*",
 		"<all_urls>",
-		"http://localhost:8765/*"
+		"http://localhost:8765/*",
+		"https://huggingface.co/*"
 	],
 	"content_scripts": [
 		{

@@ -655,6 +655,25 @@ rpcListen('anki:push', async ({ ids, deckName, modelName, frontField, backField,
 	return { added, skipped, errors: errors.slice(0, 5) };
 });
 
+/* ---------------- RPC：TTS 发音包（转发到 offscreen 引擎） ---------------- */
+
+// offscreen 文档未创建时无人应答 tts:*，这里先确保 offscreen 就绪再转发；
+// Firefox 引擎随后台页加载，rpc 本地路由直调，offscreenReady 为空操作。
+rpcListen('tts:status', async () => {
+	await offscreenReady();
+	return rpcCall('tts-engine:status');
+});
+
+rpcListen('tts:download', async ({ streamId } = {}) => {
+	await offscreenReady();
+	return rpcCall('tts-engine:download', { streamId: streamId ?? 'tts-pack' });
+});
+
+rpcListen('tts:synthesize', async (payload) => {
+	await offscreenReady();
+	return rpcCall('tts-engine:synthesize', payload);
+});
+
 /* ---------------- RPC：OCR ---------------- */
 
 rpcListen('ocr:translate', async ({ imageDataUrl, langs, from, to, langPath }) => {

@@ -2,7 +2,7 @@
  * 生词本管理页：列表/搜索/删除、TSV 导出、AnkiConnect 直推与设置。
  */
 
-import { rpcCall } from '../shared/rpc.js';
+import { rpcCall, rpcSubscribe } from '../shared/rpc.js';
 
 const ANKI_SETTINGS_KEY = 'ankiSettings';
 const DEFAULT_ANKI = {
@@ -112,6 +112,102 @@ function downloadTsv() {
 	flash('已下载 TSV（Anki 文件导入可直接使用）');
 }
 
+/* ---------------- TTS 发音包 ---------------- */
+
+const TTS_VOICES = [
+	'expr-voice-2-f', 'expr-voice-2-m', 'expr-voice-3-f', 'expr-voice-3-m',
+	'expr-voice-4-f', 'expr-voice-4-m', 'expr-voice-5-f', 'expr-voice-5-m',
+];
+
+async function ttsSettings() {
+	const { [ANKI_SETTINGS_KEY]: saved } = await chrome.storage.local.get(ANKI_SETTINGS_KEY);
+	return { ttsVoice: 'expr-voice-2-f', ...(saved && typeof saved === 'object' ? saved : {}) };
+}
+
+async function refreshTts() {
+	try {
+		const status = await rpcCall('tts:status');
+		const installed = Boolean(status?.installed);
+		$('tts-status').textContent = installed ? '已安装' : `未安装（约 ${Math.round((status?.size ?? 24000000) / 1048576)}MB）`;
+		$('tts-status').className = `status ${installed ? 'ok' : ''}`;
+		$('tts-install').style.display = installed ? 'none' : '';
+		const { [ANKI_SETTINGS_KEY]: saved } = await chrome.storage.local.get(ANKI_SETTINGS_KEY);
+		const voice = saved?.ttsVoice ?? 'expr-voice-2-f';
+		if (TTS_VOICES.includes(voice)) $('tts-voice').value = voice;
+	} catch {
+		$('tts-status').textContent = '状态未知';
+	}
+}
+
+function wireTts() {
+	$('tts-install').addEventListener('click', async () => {
+		const button = $('tts-install');
+		button.disabled = true;
+		$('tts-status').textContent = '下载中…';
+		const unsubscribe = rpcSubscribe('tts-pack', (chunk) => {
+			if (chunk.label?.includes('onnx') && chunk.label) {
+				$('tts-status').textContent = `下载中… ${chunk.label.slice(0, 24)}`;
+			}
+		});
+		try {
+			await rpcCall('tts:download', { streamId: 'tts-pack' });
+			$('tts-status').textContent = '安装完成';
+			await refreshTts();
+			flash('发音包安装完成 ✓');
+		} catch (err) {
+			$('tts-status').textContent = '安装失败';
+			flash(`发音包安装失败：${err.message.slice(0, 50)}`);
+		} finally {
+			unsubscribe();
+			button.disabled = false;
+		}
+	});
+	$('tts-voice').addEventListener('change', async () => {
+		const saved = await ttsSettings();
+		await chrome.storage.local.set({
+			[ANKI_SETTINGS_KEY]: { ...saved, ttsVoice: $('tts-voice').value },
+		});
+	});
+}
+
+/** 为英文条目合成发音（发音包已安装时）；返回 audio 映射供 anki:push 使用 */
+async function generateAudioFor(entries) {
+	const status = await rpcCall('tts:status');
+	if (!status?.installed) return { audio: {}, generated: 0 };
+	const { ttsVoice } = await ttsSettings();
+	const audio = {};
+	let generated = 0;
+	let i = 0;
+	for (const entry of entries) {
+		if (!entry.pair?.startsWith('en') || !entry.source.trim()) continue;
+		i++;
+		flash(`生成发音 ${i}…`);
+		try {
+			const { wav } = await rpcCall('tts:synthesize', { text: entry.source, voice: ttsVoice });
+			audio[entry.id] = { data: wav, filename: `obt-${entry.id}.wav` };
+			generated++;
+		} catch {
+			/* 单条合成失败：无音频推送 */
+		}
+	}
+	return { audio, generated };
+}
+
+async function createObtTemplate() {
+	try {
+		const result = await rpcCall('anki:createTemplate');
+		flash(result.created ? 'OBT 模板已创建 ✓' : 'OBT 模板已存在');
+		await connectAnki();
+		$('anki-model').value = 'OBT 双语';
+		$('anki-model').dispatchEvent(new Event('change'));
+		$('anki-front').value = '原文';
+		$('anki-back').value = '译文';
+		await saveAnkiSettings();
+	} catch (err) {
+		flash(`创建失败：${err.message.slice(0, 60)}`);
+	}
+}
+
 /* ---------------- AnkiConnect ---------------- */
 
 function setAnkiStatus(ok, text) {
@@ -194,6 +290,8 @@ async function pushToAnki() {
 	button.disabled = true;
 	$('anki-result').textContent = '推送中…';
 	try {
+		// 发音包已安装时为英文条目合成发音，随卡上传
+		const { audio } = await generateAudioFor(visibleEntries());
 		const result = await rpcCall('anki:push', {
 			ids,
 			deckName: $('anki-deck').value || settings.deckName,
@@ -201,6 +299,7 @@ async function pushToAnki() {
 			frontField: $('anki-front').value || settings.frontField,
 			backField: $('anki-back').value || settings.backField,
 			tags: $('anki-tags').value.split(/[\s,，]+/).filter(Boolean),
+			audio,
 		});
 		const bits = [`新增 ${result.added}`, `跳过(重复) ${result.skipped}`];
 		if (result.errors?.length) bits.push(`失败 ${result.errors.length}`);
@@ -247,21 +346,8 @@ function wire() {
 		renderList();
 	});
 	$('anki-refresh').addEventListener('click', connectAnki);
-	$('anki-template').addEventListener('click', async () => {
-		try {
-			const result = await rpcCall('anki:createTemplate');
-			flash(result.created ? 'OBT 模板已创建 ✓' : 'OBT 模板已存在');
-			// 自动切到 OBT 模板与字段
-			await connectAnki();
-			$('anki-model').value = 'OBT 双语';
-			$('anki-model').dispatchEvent(new Event('change'));
-			$('anki-front').value = '原文';
-			$('anki-back').value = '译文';
-			saveAnkiSettings();
-		} catch (err) {
-			flash(`创建失败：${err.message.slice(0, 60)}`);
-		}
-	});
+	$('anki-template').addEventListener('click', createObtTemplate);
+
 	$('anki-push').addEventListener('click', pushToAnki);
 	$('anki-model').addEventListener('change', async () => {
 		const saved = await ankiSettings();
@@ -278,5 +364,7 @@ function wire() {
 	entries = list ?? [];
 	$('count').textContent = `${total} 条`;
 	renderList();
+	wireTts();
+	refreshTts();
 	connectAnki();
 })();

@@ -11,6 +11,7 @@
  */
 
 import { rpcListen, rpcEmit } from '../shared/rpc.js';
+import './tts-engine.js'; // TTS 发音包通道（tts:status/download/synthesize）
 import { DEFAULT_OCR_LANG_PATH } from '../shared/models-registry.js';
 import { ensureModelFile } from '../background/model-store.js';
 

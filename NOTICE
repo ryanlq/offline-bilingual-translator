@@ -61,3 +61,36 @@ The article body extractor behind Firefox Reader Mode. Used on demand for the
 bilingual Reader view. Licensed under the Apache License 2.0 (same as this
 project); Copyright Arc90 Inc / Mozilla. Source:
 https://github.com/mozilla/readability
+
+----------------------------------------------------------------------------
+Vendored: KittenTTS browser pipeline (from Algiras/kitten-tts-js v0.1.2)
+----------------------------------------------------------------------------
+
+Files: vendor/kitten-tts/text-cleaner.js, preprocess.js, phonemizer.js,
+       audio.js, voices.json (pre-converted from KittenML voices.npz)
+
+Text-to-speech pipeline for the optional pronunciation pack (English voice
+for Anki cards). Original sources are Apache-2.0:
+- https://github.com/Algiras/kitten-tts-js (Apache-2.0)
+- Model: KittenML/kitten-tts-nano-0.1 (Apache-2.0), downloaded on demand
+
+----------------------------------------------------------------------------
+Vendored: Phonemizer.js (xenova/phonemizer.js v1.2.1)
+----------------------------------------------------------------------------
+
+File: vendor/phonemizer/phonemizer.js
+
+Self-contained espeak-ng WASM phonemizer used by the TTS pipeline.
+Apache-2.0; Copyright Xenova. Source:
+https://github.com/xenova/phonemizer.js
+
+----------------------------------------------------------------------------
+Vendored: onnxruntime-web v1.20.0 (subset)
+----------------------------------------------------------------------------
+
+Files: vendor/ort/ort.mjs, ort-wasm-simd-threaded.wasm
+
+ONNX Runtime Web executes the KittenTTS speech model. MIT License;
+Copyright (c) Microsoft Corporation. Source:
+https://github.com/microsoft/onnxruntime
+
