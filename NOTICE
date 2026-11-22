@@ -63,6 +63,16 @@ project); Copyright Arc90 Inc / Mozilla. Source:
 https://github.com/mozilla/readability
 
 ----------------------------------------------------------------------------
+Modified vendored file: vendor/tesseract/tesseract.min.js, worker.min.js
+----------------------------------------------------------------------------
+
+Modified from the upstream tesseract.js distribution: removed fallback
+URLs pointing to the jsDelivr CDN (remote code is prohibited by browser
+extension policies). The extension always supplies local worker/core/lang
+paths explicitly, so these unused defaults are now local-relative paths.
+
+
+----------------------------------------------------------------------------
 Vendored: KittenTTS browser pipeline (from Algiras/kitten-tts-js v0.1.2)
 ----------------------------------------------------------------------------
 

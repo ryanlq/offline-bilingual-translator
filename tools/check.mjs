@@ -261,6 +261,34 @@ for (const file of jsFiles) {
 }
 ok(`检查 ${closedShadowHits} 处 closed Shadow DOM 用法`);
 
+/* ---------------- 9. 远程代码引用扫描（MV3/AMO 政策） ---------------- */
+
+/* Chrome 商店与 AMO 均禁止远程托管代码（含未使用的回退 URL 字符串）。
+   曾因 vendored tesseract.min.js/worker.min.js 里的 jsDelivr 回退 URL 被拒审。
+   数据文件（模型/词表/.traineddata）下载不受限，只扫代码类远程引用。 */
+{
+	const remoteCodeRe = /https?:\/\/[^\s"'`)\]]+\.(js|mjs|wasm)(\?|$)/i;
+	const dataExemptRe = /\.(traineddata|bin|json|gz|txt|npz)(\?|$)/i;
+	const scanTargets = [
+		...(await walk(path.join(ROOT, 'src'), ['.js', '.html'])),
+		...(await walk(path.join(ROOT, 'vendor'), ['.js', '.mjs'])),
+	];
+	let scanned = 0;
+	for (const file of scanTargets) {
+		const source = await readFile(file, 'utf8');
+		for (const match of source.matchAll(/https?:\/\/[^\s"'`)\)]+/g)) {
+			const url = match[0].replace(/[\)\],;]+$/, '');
+			// github/gitlab 仓库页是署名链接不是代码文件（如 naptha/tesseract.js）
+			if (remoteCodeRe.test(url) && !dataExemptRe.test(url) && !/github\.|gitlab\./.test(url)) {
+				problems.push(`远程代码引用: ${rel(file)} → ${url.slice(0, 90)}`);
+			}
+		}
+		scanned++;
+	}
+	if (!problems.some((p) => p.startsWith('远程代码引用')))
+		ok(`远程代码引用扫描：${scanned} 个文件全部干净`);
+}
+
 /* ---------------- 7. content_scripts ---------------- */
 
 for (const entry of manifest.content_scripts ?? []) {
@@ -273,7 +301,7 @@ for (const entry of manifest.content_scripts ?? []) {
 }
 ok('content_scripts 声明有效');
 
-/* ---------------- 8. vendor JS 语法完整性 ---------------- */
+/* ---------------- 8. vendor/src JS 语法完整性 ---------------- */
 
 /* AMO linter 会解析包内全部 JS（含 vendored 库）；任何截断/损坏文件都会直接拒绝。
    曾发生过 tesseract-core.wasm.js 下载中断截断（字符串未闭合）而本机 OCR 走
