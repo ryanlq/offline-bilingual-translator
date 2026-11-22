@@ -10,6 +10,7 @@
 
 import { rpcCall } from '../shared/rpc.js';
 import { getSettings } from '../shared/settings.js';
+import { splitSentences } from '../shared/sentences.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -46,60 +47,6 @@ function sanitizeFragment(html) {
 	};
 	build(doc.body, frag);
 	return frag;
-}
-
-/* ---------------- 句子切分（标签平衡） ---------------- */
-
-/** 切分后仍保留跨句的行内样式：开标签在句尾闭合、下一句开头重开 */
-const CARRY_TAGS = new Set(['b', 'strong', 'i', 'em', 'u', 'span', 'small', 'sub', 'sup', 'abbr', 'a', 'code']);
-
-function splitSentences(html) {
-	const pieces = html.match(/<[^>]+>|[^<]+/g) ?? [];
-	const chunks = [];
-	let cur = [];
-	let openStack = [];
-
-	const flush = () => {
-		if (!cur.length) return;
-		const open = openStack.map((t) => `<${t}>`).join('');
-		const close = openStack
-			.slice()
-			.reverse()
-			.map((t) => `</${t}>`)
-			.join('');
-		chunks.push(open + cur.join('') + close);
-		cur = [];
-	};
-
-	for (const piece of pieces) {
-		if (piece.startsWith('<')) {
-			const m = /^<\s*(\/?)\s*([a-z]+)/i.exec(piece);
-			const tag = m?.[2]?.toLowerCase();
-			if (tag && CARRY_TAGS.has(tag)) {
-				if (m[1]) openStack = openStack.filter((t) => t !== tag);
-				else if (!openStack.includes(tag)) openStack.push(tag);
-			}
-			cur.push(piece);
-			continue;
-		}
-
-		// 文本片段：按句末标点切（lookbehind 需 Chrome 62+/FF 78+，基线内）。
-		// 单字母缩写（e.g. / i.e. / 人名首字母）后不切。
-		const parts = piece.split(/(?<=[.!?。！？；]["')」』"]?)\s+/);
-		for (let i = 0; i < parts.length; i++) {
-			const part = parts[i];
-			cur.push(part);
-			if (i < parts.length - 1) {
-				const trimmed = part.trimEnd();
-				const last = trimmed.slice(-1);
-				const isAbbrev =
-					last === '.' && /[A-Za-z]\.$/.test(trimmed) && !/[.!?]$/.test(trimmed.slice(0, -1));
-				if (!isAbbrev) flush();
-			}
-		}
-	}
-	flush();
-	return chunks.filter((c) => c.replace(/<[^>]*>/g, '').trim().length > 0);
 }
 
 /* ---------------- 翻译方向 ---------------- */
