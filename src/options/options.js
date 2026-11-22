@@ -100,6 +100,12 @@ async function saveAll() {
 
 document.getElementById('save').addEventListener('click', saveAll);
 
+// 生词本管理页（独立扩展页）
+document.getElementById('open-vocab').addEventListener('click', (event) => {
+	event.preventDefault();
+	chrome.tabs.create({ url: chrome.runtime.getURL('src/vocab/vocab.html') });
+});
+
 /* ---------------- OCR 语言选项 ---------------- */
 
 const ocrLangsSelect = document.getElementById('ocrLangs');

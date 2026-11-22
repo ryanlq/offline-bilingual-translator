@@ -1,0 +1,229 @@
+/* 生词本管理页 */
+
+:root {
+	--ink: #1f2430;
+	--ink-soft: #6b7280;
+	--paper: #ffffff;
+	--paper-soft: #f3f4f6;
+	--accent: #1a73e8;
+	--line: #e5e7eb;
+	--danger: #c0392b;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+		'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+	font-size: 14px;
+}
+
+.topbar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 20px;
+	background: var(--paper);
+	border-bottom: 1px solid var(--line);
+	position: sticky;
+	top: 0;
+	z-index: 5;
+}
+
+.topbar h1 {
+	font-size: 18px;
+	margin: 0;
+}
+
+.count {
+	color: var(--ink-soft);
+	font-size: 13px;
+}
+
+.spacer {
+	flex: 1;
+}
+
+.btn {
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	border-radius: 6px;
+	padding: 6px 14px;
+	cursor: pointer;
+	font-size: 13px;
+}
+
+.btn:hover {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.btn.primary {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: #fff;
+}
+
+.btn.danger {
+	color: var(--danger);
+}
+
+.btn.danger:hover {
+	border-color: var(--danger);
+}
+
+.card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 14px 16px;
+	margin: 14px 20px;
+}
+
+.anki h2 {
+	font-size: 15px;
+	margin: 0 0 6px;
+}
+
+.status {
+	font-size: 12px;
+	font-weight: normal;
+	color: var(--ink-soft);
+}
+
+.status.ok {
+	color: #1a7f37;
+}
+
+.status.bad {
+	color: var(--danger);
+}
+
+.hint {
+	color: var(--ink-soft);
+	font-size: 12px;
+	margin: 4px 0 10px;
+}
+
+.hint code {
+	background: var(--paper-soft);
+	padding: 1px 5px;
+	border-radius: 4px;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 10px 16px;
+}
+
+.grid label {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 12px;
+	color: var(--ink-soft);
+}
+
+.grid select,
+.grid input {
+	padding: 5px 8px;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	font-size: 13px;
+}
+
+.anki-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 12px;
+}
+
+.list-area {
+	margin: 0 20px 40px;
+}
+
+#search {
+	width: 100%;
+	max-width: 480px;
+	padding: 8px 12px;
+	margin: 14px 0;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font-size: 14px;
+}
+
+.entry {
+	display: flex;
+	gap: 14px;
+	align-items: flex-start;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 10px 14px;
+	margin-bottom: 8px;
+}
+
+.entry .texts {
+	flex: 1;
+	min-width: 0;
+}
+
+.entry .source {
+	font-size: 14px;
+	margin-bottom: 3px;
+}
+
+.entry .translation {
+	color: var(--accent);
+	font-size: 13px;
+}
+
+.entry .meta {
+	color: var(--ink-soft);
+	font-size: 11px;
+	margin-top: 5px;
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+	min-width: 0;
+}
+
+.entry .meta a {
+	color: var(--ink-soft);
+	text-decoration: none;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 320px;
+}
+
+.entry .meta a:hover {
+	color: var(--accent);
+}
+
+.entry .del {
+	border: none;
+	background: none;
+	color: var(--ink-soft);
+	cursor: pointer;
+	font-size: 16px;
+	padding: 2px 6px;
+}
+
+.entry .del:hover {
+	color: var(--danger);
+}
+
+.empty {
+	text-align: center;
+	color: var(--ink-soft);
+	padding: 60px 0;
+}

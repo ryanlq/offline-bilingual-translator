@@ -46,7 +46,8 @@
 		"https://firefox-settings-attachments.cdn.mozilla.net/*",
 		"https://firefox.settings.services.mozilla.com/*",
 		"https://tessdata.projectnaptha.com/*",
-		"<all_urls>"
+		"<all_urls>",
+		"http://localhost:8765/*"
 	],
 	"content_scripts": [
 		{

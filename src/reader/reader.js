@@ -70,6 +70,7 @@ const state = {
 	total: 0,
 	done: 0,
 	title: '',
+	sourceUrl: '',
 };
 /** 阅读元素 → 段落条目（O(1) 反查，避免 flush/observer 循环里 O(n) 线性扫） */
 const pairByEl = new Map();
@@ -442,6 +443,7 @@ function stopKeepAlive() {
 	}
 
 	state.title = data.title;
+	state.sourceUrl = data.sourceUrl || '';
 	state.direction = resolveDirection(
 		(await getSettings()).translateDirection,
 		data.lang,
@@ -449,4 +451,48 @@ function stopKeepAlive() {
 	renderArticle(data);
 	observePairs();
 	startKeepAlive();
+	wireVocabSave();
 })();
+
+/* ---------------- 生词本：点击句子/段落收藏（原文+译文成对） ---------------- */
+
+const plainText = (html) =>
+	new DOMParser().parseFromString(html, 'text/html').body.textContent.trim();
+
+async function saveVocab(source, translation, el) {
+	if (!source) return;
+	try {
+		const result = await rpcCall('vocab:add', {
+			source,
+			translation,
+			sourceUrl: state.sourceUrl,
+			title: state.title,
+			pair: `${state.direction.from}${state.direction.to}`,
+		});
+		flash(result.added ? '已加入生词本 ✓' : '已在生词本中');
+		el?.classList.add('saved');
+	} catch (err) {
+		flash(`收藏失败：${err.message.slice(0, 40)}`);
+	}
+}
+
+function wireVocabSave() {
+	// 逐句排版：点句行收藏该句；交替/双栏：点译文/原文收藏整段
+	contentEl.addEventListener('click', (event) => {
+		const sRow = event.target.closest('.s-row');
+		const pairEl = event.target.closest('.pair');
+		const item = pairEl ? pairByEl.get(pairEl) : null;
+		if (!item) return;
+
+		if (sRow) {
+			const idx = [...sRow.parentElement.children].indexOf(sRow);
+			const sentence = item.sentences[idx];
+			if (!sentence) return;
+			saveVocab(plainText(sentence.orig), sentence.text ?? '', sRow);
+			return;
+		}
+		if (event.target.closest('.tran') || event.target.closest('.orig')) {
+			saveVocab(item.origEl.textContent.trim(), item.tranEl.textContent.trim(), item.tranEl);
+		}
+	});
+}

@@ -189,6 +189,27 @@ body:not([data-style='sentence']) .pair .sentences {
 
 .s-row {
 	margin-bottom: 0.65em;
+	cursor: pointer;
+	border-radius: 4px;
+	padding: 2px 4px;
+	margin-left: -4px;
+	transition: background-color 0.15s;
+}
+
+.s-row:hover {
+	background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.s-row.saved .s-orig::after {
+	content: ' ✓';
+	color: var(--accent);
+	font-size: 0.8em;
+}
+
+.pair > .orig,
+.pair > .tran {
+	cursor: pointer;
+	border-radius: 4px;
 }
 
 .s-orig {

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8" />
+	<title>生词本 · 离线双语翻译</title>
+	<link rel="stylesheet" href="vocab.css" />
+</head>
+<body>
+	<header class="topbar">
+		<h1>生词本</h1>
+		<span id="count" class="count"></span>
+		<span class="spacer"></span>
+		<button id="export-tsv" class="btn">导出 TSV</button>
+		<button id="copy-tsv" class="btn secondary">复制 TSV</button>
+		<button id="clear-all" class="btn danger">清空</button>
+	</header>
+
+	<section class="anki card">
+		<h2>Anki 直推 <span id="anki-status" class="status">检查中…</span></h2>
+		<p class="hint">
+			需要桌面版 Anki 正在运行，并安装 AnkiConnect 插件（Tools → Add-ons → Get Add-ons，
+			代码 <code>2055492159</code>）。也可以用上方「导出 TSV」在 Anki 里直接导入。
+		</p>
+		<div class="grid">
+			<label>牌组<select id="anki-deck"><option value="">—</option></select></label>
+			<label>模板<select id="anki-model"><option value="">—</option></select></label>
+			<label>正面字段<select id="anki-front"><option value="">—</option></select></label>
+			<label>背面字段<select id="anki-back"><option value="">—</option></select></label>
+			<label>附加标签<input id="anki-tags" type="text" placeholder="如 vocabulary" /></label>
+		</div>
+		<div class="anki-actions">
+			<button id="anki-refresh" class="btn secondary">重新连接</button>
+			<button id="anki-push" class="btn primary">推送全部到 Anki</button>
+			<span id="anki-result" class="hint"></span>
+		</div>
+	</section>
+
+	<section class="list-area">
+		<input id="search" type="search" placeholder="搜索原文 / 译文 / 来源标题…" />
+		<div id="vocab-list"></div>
+		<div id="empty" class="empty" style="display: none">
+			还没有生词。到任意网页选中文字右键「加入生词本」，或在双语阅读模式里点击句子行收藏。
+		</div>
+	</section>
+
+	<script type="module" src="vocab.js"></script>
+</body>
+</html>

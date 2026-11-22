@@ -491,6 +491,134 @@ rpcListen('reader:open', async ({ tabId } = {}) => {
 	return openReaderMode(tabId);
 });
 
+/* ---------------- 生词本与 AnkiConnect ---------------- */
+
+const ANKI_ENDPOINT = 'http://127.0.0.1:8765/';
+const VOCAB_KEY = 'vocab';
+const VOCAB_LIMIT = 10000;
+
+async function ankiInvoke(action, params = {}) {
+	let response;
+	try {
+		response = await fetch(ANKI_ENDPOINT, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action, version: 6, params }),
+			signal: AbortSignal.timeout(8000),
+		});
+	} catch {
+		throw new Error('无法连接 Anki（需桌面版运行并安装 AnkiConnect 插件，代码 2055492159）');
+	}
+	if (!response.ok) throw new Error(`AnkiConnect HTTP ${response.status}`);
+	const body = await response.json();
+	if (body.error) throw new Error(String(body.error));
+	return body.result;
+}
+
+async function vocabLoad() {
+	const { [VOCAB_KEY]: vocab } = await chrome.storage.local.get(VOCAB_KEY);
+	return Array.isArray(vocab) ? vocab : [];
+}
+
+async function vocabSave(vocab) {
+	await chrome.storage.local.set({ [VOCAB_KEY]: vocab });
+}
+
+rpcListen('vocab:add', async ({ source, translation, sourceUrl = '', title = '', pair = '' } = {}) => {
+	if (!source || typeof source !== 'string') throw new Error('缺少原文');
+	const vocab = await vocabLoad();
+	const trimmed = source.trim();
+	if (vocab.some((e) => e.source === trimmed)) {
+		return { added: false, total: vocab.length, reason: 'duplicate' };
+	}
+	const entry = {
+		id: `v${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+		source: trimmed,
+		translation: typeof translation === 'string' ? translation.trim() : '',
+		sourceUrl,
+		title,
+		pair,
+		createdAt: Date.now(),
+	};
+	vocab.unshift(entry);
+	if (vocab.length > VOCAB_LIMIT) vocab.length = VOCAB_LIMIT;
+	await vocabSave(vocab);
+	return { added: true, total: vocab.length, id: entry.id };
+});
+
+rpcListen('vocab:list', async () => {
+	const vocab = await vocabLoad();
+	return { entries: vocab, total: vocab.length };
+});
+
+rpcListen('vocab:delete', async ({ id } = {}) => {
+	const vocab = await vocabLoad();
+	const next = vocab.filter((e) => e.id !== id);
+	await vocabSave(next);
+	return { total: next.length };
+});
+
+rpcListen('vocab:clear', async () => {
+	await vocabSave([]);
+	return { total: 0 };
+});
+
+rpcListen('anki:status', async () => {
+	try {
+		const version = await ankiInvoke('version');
+		return { ok: true, version };
+	} catch (err) {
+		return { ok: false, error: err.message };
+	}
+});
+
+rpcListen('anki:meta', async () => {
+	const [deckNames, modelNames] = await Promise.all([
+		ankiInvoke('deckNames'),
+		ankiInvoke('modelNames'),
+	]);
+	deckNames.sort();
+	modelNames.sort();
+	return { deckNames, modelNames };
+});
+
+rpcListen('anki:fields', async ({ modelName } = {}) => {
+	if (!modelName) throw new Error('缺少 modelName');
+	return { fieldNames: await ankiInvoke('modelFieldNames', { modelName }) };
+});
+
+rpcListen('anki:push', async ({ ids, deckName, modelName, frontField, backField, tags = [] } = {}) => {
+	if (!Array.isArray(ids) || !ids.length) throw new Error('未选择条目');
+	if (!deckName || !modelName || !frontField || !backField) {
+		throw new Error('请先配置牌组、模板与字段');
+	}
+	const vocab = await vocabLoad();
+	const byId = new Map(vocab.map((e) => [e.id, e]));
+	let added = 0;
+	let skipped = 0;
+	const errors = [];
+	for (const id of ids) {
+		const entry = byId.get(id);
+		if (!entry) continue;
+		try {
+			await ankiInvoke('addNote', {
+				note: {
+					deckName,
+					modelName,
+					fields: { [frontField]: entry.source, [backField]: entry.translation },
+					tags: ['obt', ...(Array.isArray(tags) ? tags : [])],
+					options: { allowDuplicate: false },
+				},
+			});
+			added++;
+		} catch (err) {
+			if (/duplicate/i.test(err.message)) skipped++;
+			else errors.push(`${entry.source.slice(0, 24)}…: ${err.message.slice(0, 60)}`);
+		}
+	}
+	return { added, skipped, errors: errors.slice(0, 5) };
+});
+
 /* ---------------- RPC：OCR ---------------- */
 
 rpcListen('ocr:translate', async ({ imageDataUrl, langs, from, to, langPath }) => {
@@ -663,6 +791,11 @@ chrome.runtime.onInstalled.addListener(async () => {
 			title: '双语阅读模式',
 			contexts: ['page'],
 		});
+		chrome.contextMenus.create({
+			id: 'vocab-add',
+			title: '加入生词本',
+			contexts: ['selection'],
+		});
 	});
 });
 
@@ -690,8 +823,35 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 		await sendToTab(tab.id, { type: 'command:ocrImage', srcUrl: info.srcUrl }, frameId);
 	} else if (info.menuItemId === 'reader-mode') {
 		openReaderMode(tab.id).catch((err) => console.warn('阅读模式打开失败:', err.message));
+	} else if (info.menuItemId === 'vocab-add') {
+		addSelectionToVocab(info.selectionText || '').catch((err) => console.warn('加入生词本失败:', err.message));
 	}
 });
+
+/** 划词加入生词本：检测选中文本语言 → 走现有翻译管线 → 存储 */
+async function addSelectionToVocab(selection) {
+	const source = selection.trim();
+	if (source.length < 1 || source.length > 2000) return;
+	const { settings } = await chrome.storage.local.get('settings');
+	let from;
+	let to;
+	const dir = settings?.translateDirection;
+	if (dir && dir !== 'auto' && /^[a-z]{4}$/i.test(dir)) {
+		from = dir.slice(0, 2).toLowerCase();
+		to = dir.slice(2).toLowerCase();
+	} else {
+		// auto：按选中文本文字系统粗判（汉字/假名 → zh→en，否则 en→zh）
+		const hasCJK = /[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(source);
+		from = hasCJK ? 'zh' : 'en';
+		to = hasCJK ? 'en' : 'zh';
+	}
+	const [translation] = await translateTexts([source], from, to);
+	return rpcCall('vocab:add', {
+		source,
+		translation,
+		pair: `${from}${to}`,
+	});
+}
 
 // popup 打开时可能需要触发模型下载进度订阅
 rpcEmit('background-started', { time: Date.now() });
