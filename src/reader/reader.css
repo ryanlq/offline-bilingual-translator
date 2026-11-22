@@ -178,6 +178,37 @@ body[data-style='columns'] .pair .tran {
 	font-size: 0.85em;
 }
 
+/* 逐句交错：句行 = 原文句 + 译文句；该模式下隐藏整段级 orig/tran */
+body[data-style='sentence'] .pair > .orig,
+body[data-style='sentence'] .pair > .tran {
+	display: none;
+}
+
+body:not([data-style='sentence']) .pair .sentences {
+	display: none;
+}
+
+.s-row {
+	margin-bottom: 0.65em;
+}
+
+.s-orig {
+	margin: 0;
+}
+
+.s-tran {
+	color: var(--tran-ink);
+	font-size: 0.95em;
+	margin-top: 0.15em;
+	padding-left: 0.9em;
+	border-left: 2px solid var(--line);
+}
+
+.s-tran.fail {
+	color: #c0392b;
+	font-size: 0.85em;
+}
+
 /* 图片块 */
 figure.blk-img {
 	margin: 1.4em 0;

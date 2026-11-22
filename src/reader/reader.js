@@ -1,6 +1,11 @@
 /**
- * 双语阅读视图：渲染提取的正文，懒翻译（进入视口才批量请求），排版偏好即时生效。
+ * 双语阅读视图：渲染提取的正文，句级懒翻译（进入视口才批量请求），排版偏好即时生效。
  * 数据来源：后台把 content script 提取的正文写入 storage.local，hash 携带 key。
+ *
+ * 翻译粒度恒为「句子」（标签平衡切分，Bergamot 本就句级解码，质量等价）：
+ * - 交替/双栏排版：显示整段原文 + 句译合并的段落译文
+ * - 逐句排版：原文句/译文句交错成行
+ * 排版切换纯 CSS，无需重译。
  */
 
 import { rpcCall } from '../shared/rpc.js';
@@ -43,6 +48,60 @@ function sanitizeFragment(html) {
 	return frag;
 }
 
+/* ---------------- 句子切分（标签平衡） ---------------- */
+
+/** 切分后仍保留跨句的行内样式：开标签在句尾闭合、下一句开头重开 */
+const CARRY_TAGS = new Set(['b', 'strong', 'i', 'em', 'u', 'span', 'small', 'sub', 'sup', 'abbr', 'a', 'code']);
+
+function splitSentences(html) {
+	const pieces = html.match(/<[^>]+>|[^<]+/g) ?? [];
+	const chunks = [];
+	let cur = [];
+	let openStack = [];
+
+	const flush = () => {
+		if (!cur.length) return;
+		const open = openStack.map((t) => `<${t}>`).join('');
+		const close = openStack
+			.slice()
+			.reverse()
+			.map((t) => `</${t}>`)
+			.join('');
+		chunks.push(open + cur.join('') + close);
+		cur = [];
+	};
+
+	for (const piece of pieces) {
+		if (piece.startsWith('<')) {
+			const m = /^<\s*(\/?)\s*([a-z]+)/i.exec(piece);
+			const tag = m?.[2]?.toLowerCase();
+			if (tag && CARRY_TAGS.has(tag)) {
+				if (m[1]) openStack = openStack.filter((t) => t !== tag);
+				else if (!openStack.includes(tag)) openStack.push(tag);
+			}
+			cur.push(piece);
+			continue;
+		}
+
+		// 文本片段：按句末标点切（lookbehind 需 Chrome 62+/FF 78+，基线内）。
+		// 单字母缩写（e.g. / i.e. / 人名首字母）后不切。
+		const parts = piece.split(/(?<=[.!?。！？；]["')」』"]?)\s+/);
+		for (let i = 0; i < parts.length; i++) {
+			const part = parts[i];
+			cur.push(part);
+			if (i < parts.length - 1) {
+				const trimmed = part.trimEnd();
+				const last = trimmed.slice(-1);
+				const isAbbrev =
+					last === '.' && /[A-Za-z]\.$/.test(trimmed) && !/[.!?]$/.test(trimmed.slice(0, -1));
+				if (!isAbbrev) flush();
+			}
+		}
+	}
+	flush();
+	return chunks.filter((c) => c.replace(/<[^>]*>/g, '').trim().length > 0);
+}
+
 /* ---------------- 翻译方向 ---------------- */
 
 function resolveDirection(setting, pageLang) {
@@ -58,12 +117,12 @@ function resolveDirection(setting, pageLang) {
 
 const contentEl = document.getElementById('content');
 const state = {
-	blocks: [], // {type, html, src?, alt?} 原文数据
-	pairs: [], // 对应渲染出的 .pair 元素（文本块）
+	blocks: [], // 原文数据
+	pairs: [], // { block, el, sentences: [{orig, tranEl, text}], tranJoinedEl }
 	direction: { from: 'en', to: 'zh' },
-	pending: new Map(), // element → {text(html 片段), hasTags}
-	translatedCount: 0,
 	total: 0,
+	done: 0,
+	title: '',
 };
 
 function renderArticle(data) {
@@ -95,6 +154,12 @@ function renderArticle(data) {
 			continue;
 		}
 
+		const sentences = splitSentences(block.html).map((orig) => ({
+			orig,
+			text: null, // 译文（由翻译队列填充）
+		}));
+		if (sentences.length === 0) continue;
+
 		const pair = document.createElement('div');
 		pair.className = 'pair pending';
 		pair.dataset.block = block.type;
@@ -112,24 +177,54 @@ function renderArticle(data) {
 		tran.appendChild(ph);
 		pair.appendChild(tran);
 
+		const sentWrap = document.createElement('div');
+		sentWrap.className = 'sentences';
+		for (const s of sentences) {
+			const row = document.createElement('div');
+			row.className = 's-row';
+			const sOrig = document.createElement('div');
+			sOrig.className = 's-orig';
+			sOrig.appendChild(sanitizeFragment(s.orig));
+			const sTran = document.createElement('div');
+			sTran.className = 's-tran';
+			const sPh = document.createElement('span');
+			sPh.className = 'ph';
+			sPh.textContent = '…';
+			sTran.appendChild(sPh);
+			row.appendChild(sOrig);
+			row.appendChild(sTran);
+			sentWrap.appendChild(row);
+			s.tranEl = sTran;
+		}
+		pair.appendChild(sentWrap);
+
 		frag.appendChild(pair);
-		state.pairs.push({ block, el: pair });
+		state.pairs.push({ block, el: pair, sentences, tranEl: tran, origEl: orig });
+		state.total += sentences.length;
 	}
 	contentEl.appendChild(frag);
-	state.total = state.pairs.length;
 	updateProgress();
 }
 
 function updateProgress() {
-	const el = document.getElementById('progress');
-	el.textContent = state.total
-		? `${state.translatedCount}/${state.total} 已翻译`
+	document.getElementById('progress').textContent = state.total
+		? `${state.done}/${state.total} 已翻译`
 		: '';
 }
 
-/* ---------------- 懒翻译（进入视口才入队，按字符数分片） ---------------- */
+/** 段落句译全部到齐后，合并写入交替/双栏视图的整段译文 */
+function refreshJoined(pairItem) {
+	const texts = pairItem.sentences.map((s) => s.text);
+	if (texts.some((t) => t === null)) return;
+	const joined = texts.join('');
+	pairItem.tranEl.textContent = '';
+	pairItem.tranEl.appendChild(sanitizeFragment(joined));
+	pairItem.el.classList.remove('pending');
+}
 
-const MAX_BATCH_CHARS = 4000;
+/* ---------------- 懒翻译（句子为单元；进入视口才入队；按字符数分片） ---------------- */
+
+const MAX_BATCH_CHARS = 3000;
 const MAX_BATCH_SIZE = 40;
 
 const queueEl = new Set();
@@ -144,11 +239,9 @@ function observePairs() {
 			for (const entry of entries) {
 				if (!entry.isIntersecting) continue;
 				observer.unobserve(entry.target);
-				const item = state.pairs.find((p) => p.el === entry.target);
-				if (!item || seen.has(item.el)) continue;
-				seen.add(item.el);
-				item.el.querySelector('.tran')?.classList.add('pending');
-				queueEl.add(item.el);
+				if (seen.has(entry.target)) continue;
+				seen.add(entry.target);
+				queueEl.add(entry.target);
 			}
 			clearTimeout(batchTimer);
 			batchTimer = setTimeout(() => flush(), 250);
@@ -163,56 +256,61 @@ async function flush() {
 	flushing = true;
 	try {
 		while (queueEl.size) {
-			const items = [...queueEl]
-				.map((el) => {
-					const item = state.pairs.find((p) => p.el === el);
-					return { el, html: item ? item.block.html : '' };
-				})
-				.filter(({ html }) => html.length > 0);
-			if (!items.length) return;
-
-			// 按字符数切一片
-			let chars = 0;
-			let end = 0;
-			while (end < items.length && end < MAX_BATCH_SIZE) {
-				const len = items[end].html.length + 1;
-				if (chars > 0 && chars + len > MAX_BATCH_CHARS) break;
-				chars += len;
-				end++;
+			// 展开段落里未翻译的句子
+			const sentences = [];
+			for (const el of queueEl) {
+				const item = state.pairs.find((p) => p.el === el);
+				if (!item) continue;
+				for (const s of item.sentences) {
+					if (s.text === null) sentences.push({ item, s, html: s.orig });
+				}
 			}
-			const slice = items.slice(0, end);
-			for (const it of slice) queueEl.delete(it.el);
+			queueEl.clear();
+			if (!sentences.length) return;
 
+			// 按字符数切一片（句子的 html 若无标签则转义后进 html 批，保护引擎解析器）
 			const esc = (t) =>
 				t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-			const prepared = slice.map(({ html }) => ({
-				payload: html.includes('<') ? html : esc(html),
-				raw: html,
-				hasTags: html.includes('<'),
-			}));
-			try {
-				const translations = await rpcCall('translate:texts', {
-					texts: prepared.map(({ payload }) => payload),
-					from: state.direction.from,
-					to: state.direction.to,
-					html: true,
-				});
-				slice.forEach(({ el }, index) => {
-					const tranEl = el.querySelector('.tran');
-					tranEl.classList.remove('pending');
-					tranEl.textContent = '';
-					tranEl.appendChild(sanitizeFragment(translations[index] ?? ''));
-					state.translatedCount++;
-				});
-				updateProgress();
-			} catch (err) {
-				slice.forEach(({ el }) => {
-					const tranEl = el.querySelector('.tran');
-					tranEl.classList.remove('pending');
-					tranEl.classList.add('fail');
-					tranEl.textContent = `⚠ ${err.message}`;
-				});
-				return; // 模型缺失等错误对后续同样成立
+			let start = 0;
+			while (start < sentences.length) {
+				let end = 0;
+				let chars = 0;
+				while (end < sentences.length - start && end < MAX_BATCH_SIZE) {
+					const len = sentences[start + end].html.length + 1;
+					if (chars > 0 && chars + len > MAX_BATCH_CHARS) break;
+					chars += len;
+					end++;
+				}
+				const slice = sentences.slice(start, start + end);
+				const prepared = slice.map(({ html }) => ({
+					payload: html.includes('<') ? html : esc(html),
+				}));
+				try {
+					const translations = await rpcCall('translate:texts', {
+						texts: prepared.map(({ payload }) => payload),
+						from: state.direction.from,
+						to: state.direction.to,
+						html: true,
+					});
+					slice.forEach(({ s }, index) => {
+						s.text = translations[index] ?? '';
+						s.tranEl.textContent = '';
+						s.tranEl.appendChild(sanitizeFragment(s.text));
+						state.done++;
+					});
+					// 有句子到齐的段落刷新合并译文
+					for (const { item } of slice) refreshJoined(item);
+					updateProgress();
+				} catch (err) {
+					slice.forEach(({ s }) => {
+						s.text = '';
+						s.tranEl.classList.add('fail');
+						s.tranEl.textContent = `⚠ ${err.message}`;
+					});
+					for (const { item } of slice) refreshJoined(item);
+					return; // 模型缺失等错误对后续同样成立
+				}
+				start += end;
 			}
 		}
 	} finally {
@@ -252,14 +350,23 @@ function wireToolbar() {
 		});
 	}
 
-	// 导出：双语 Markdown（原文 + 已翻译的译文；未翻译的只有原文）
+	// 导出：双语 Markdown（逐句交错视图优先，交替视图给段落级合并）
 	const toMarkdown = () => {
 		const lines = [`# ${document.getElementById('a-title').textContent}`, ''];
 		for (const p of state.pairs) {
-			const origText = p.el.querySelector('.orig').textContent.trim();
-			const tranText = p.el.querySelector('.tran').textContent.trim();
-			const tran = tranText.startsWith('⚠') || tranText === '…' ? '' : `\n\n> ${tranText}`;
-			lines.push(`${origText}${tran}`, '');
+			if (document.body.dataset.style === 'sentence' || p.sentences.every((s) => s.text !== null)) {
+				for (const s of p.sentences) {
+					const origText = s.tranEl.parentElement.querySelector('.s-orig').textContent.trim();
+					const tranText = (s.text ?? '').trim();
+					lines.push(origText, '', tranText ? `> ${tranText}` : '', '');
+				}
+			} else {
+				const origText = p.origEl.textContent.trim();
+				const tranText = p.tranEl.textContent.trim();
+				const tran =
+					!tranText || tranText === '…' || tranText.startsWith('⚠') ? '' : `\n\n> ${tranText}`;
+				lines.push(`${origText}${tran}`, '');
+			}
 		}
 		return lines.join('\n');
 	};

@@ -252,12 +252,36 @@ rpcListen('engine:ensureModel', async ({ direction, pairKey, fileSpecs, streamId
 const TRANSLATION_CACHE_LIMIT = 500;
 const translationCache = new Map(); // "enzh|h|<text>" → 译文
 
-/** html 模式下引擎会在 CJK 标点前残留空格（"服务器 。"）：输出侧统一整理 */
+const HALF_TO_FULL = { ',': '，', ';': '；', ':': '：', '.': '。', '!': '！', '?': '？' };
+
+/**
+ * 中文译文标点/空格整理（Bergamot 输出半角标点 + 杂乱空格）：
+ * ① 全角标点前不留空格；② 半角标点前不留空格（后跟汉字时）；
+ * ③ 标点后跟汉字不留空格；④ 跟在汉字后的半角标点转全角——
+ *    前望字符需跳过 HTML 闭标签（</strong>, 这种写法也要转），
+ *    后望不是数字/字母（保护 "2.2"、"e.g." 这类不转）。
+ * 仅当目标语言为 zh 时应用，英文译文不动。
+ */
 function tidyCjkPunctuation(text) {
-	return text
+	// 半角→全角先行（仅汉字后，后望不是数字/字母），再做空格清理（这样全角化后残留的空格也能清掉）
+	let t = text.replace(/[,;:.!?](?![\dA-Za-z])/g, (m, offset, s) => {
+		// 向前找上一个可见字符（跳过 HTML 标签）
+		let i = offset - 1;
+		while (i >= 0 && s[i] === '>') {
+			const lt = s.lastIndexOf('<', i);
+			if (lt === -1) return m;
+			i = lt - 1;
+		}
+		if (i < 0) return m;
+		if (!/[\u4e00-\u9fff]/.test(s[i])) return m;
+		return HALF_TO_FULL[m] ?? m;
+	});
+
+	t = t
 		.replace(/ +([，。！？；：、）】》」』])/g, '$1')
 		.replace(/ +([,.!?;:])(?=[\u4e00-\u9fff])/g, '$1')
-		.replace(/([。！？；]) +(?=[\u4e00-\u9fff])/g, '$1');
+		.replace(/([，。！？；：、）】》」』]) +(?=[\u4e00-\u9fff])/g, '$1');
+	return t;
 }
 
 rpcListen('engine:translate', async ({ texts, direction, models, html = false }) => {
