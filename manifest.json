@@ -33,6 +33,7 @@
 	},
 	"permissions": [
 		"offscreen",
+		"scripting",
 		"storage",
 		"unlimitedStorage",
 		"contextMenus",
@@ -44,11 +45,14 @@
 		"https://bergamot.s3.amazonaws.com/*",
 		"https://firefox-settings-attachments.cdn.mozilla.net/*",
 		"https://firefox.settings.services.mozilla.com/*",
-		"https://tessdata.projectnaptha.com/*"
+		"https://tessdata.projectnaptha.com/*",
+		"<all_urls>"
 	],
 	"content_scripts": [
 		{
-			"matches": ["<all_urls>"],
+			"matches": [
+				"<all_urls>"
+			],
 			"all_frames": true,
 			"js": [
 				"src/content/shared.js",
@@ -64,12 +68,22 @@
 	],
 	"commands": {
 		"toggle-page-translation": {
-			"suggested_key": { "default": "Alt+Shift+T" },
+			"suggested_key": {
+				"default": "Alt+Shift+T"
+			},
 			"description": "开/关当前页面双语对照翻译"
 		},
 		"ocr-screen-region": {
-			"suggested_key": { "default": "Alt+Shift+O" },
+			"suggested_key": {
+				"default": "Alt+Shift+O"
+			},
 			"description": "框选屏幕区域进行 OCR 翻译"
+		},
+		"open-reader-mode": {
+			"suggested_key": {
+				"default": "Alt+Shift+R"
+			},
+			"description": "打开双语阅读模式"
 		}
 	},
 	"web_accessible_resources": [
@@ -79,7 +93,9 @@
 				"vendor/bergamot/*.*",
 				"vendor/tesseract/*"
 			],
-			"matches": ["<all_urls>"]
+			"matches": [
+				"<all_urls>"
+			]
 		}
 	]
 }

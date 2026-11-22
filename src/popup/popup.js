@@ -148,6 +148,18 @@ document.getElementById('more-packs').addEventListener('click', (event) => {
 	openOptions();
 });
 
+// 双语阅读模式：提取正文后在新标签打开阅读视图（失败在弹窗内提示）
+document.getElementById('reader-btn').addEventListener('click', async () => {
+	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	if (!tab?.id) return;
+	try {
+		await rpcCall('reader:open', { tabId: tab.id });
+		window.close();
+	} catch (err) {
+		showError(err.message);
+	}
+});
+
 document.getElementById('ocr-region').addEventListener('click', async () => {
 	const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 	if (!tab?.id) return;

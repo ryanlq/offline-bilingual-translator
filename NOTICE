@@ -50,3 +50,14 @@ ARTWORK
 The extension icon and store artwork are original assets contributed by the
 project maintainer (source: tools/icon-source.png) and are distributed under
 the project's Apache-2.0 license unless stated otherwise.
+
+----------------------------------------------------------------------------
+Vendored: Mozilla Readability (@mozilla/readability v0.6.0)
+----------------------------------------------------------------------------
+
+Files: vendor/readability/Readability.js, Readability-readerable.js, LICENSE.md
+
+The article body extractor behind Firefox Reader Mode. Used on demand for the
+bilingual Reader view. Licensed under the Apache License 2.0 (same as this
+project); Copyright Arc90 Inc / Mozilla. Source:
+https://github.com/mozilla/readability

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8" />
+	<title>双语阅读</title>
+	<link rel="stylesheet" href="reader.css" />
+</head>
+<body data-theme="light" data-style="interleave">
+	<header class="toolbar">
+		<button id="back" class="tb-btn" title="关闭并返回原文">← 返回原文</button>
+		<span id="progress" class="progress-hint"></span>
+		<span class="tb-group">
+			<button class="tb-btn style-btn" data-style="interleave" title="译文跟随原段落">交替</button>
+			<button class="tb-btn style-btn" data-style="columns" title="原文与译文左右双栏">双栏</button>
+		</span>
+		<span class="tb-group">
+			<button id="font-minus" class="tb-btn" title="减小字号">A−</button>
+			<button id="font-plus" class="tb-btn" title="增大字号">A+</button>
+		</span>
+		<span class="tb-group">
+			<button class="tb-btn theme-btn" data-theme="light" title="明亮主题">☀</button>
+			<button class="tb-btn theme-btn" data-theme="sepia" title="羊皮纸主题">◐</button>
+			<button class="tb-btn theme-btn" data-theme="dark" title="夜间主题">☾</button>
+		</span>
+		<button id="export-md" class="tb-btn" title="复制双语全文（Markdown）">复制</button>
+		<button id="download-md" class="tb-btn" title="下载双语全文（Markdown）">下载</button>
+	</header>
+
+	<main id="reader-main">
+		<div class="article-head">
+			<h1 id="a-title"></h1>
+			<div id="a-meta" class="meta"></div>
+		</div>
+		<div id="content"></div>
+		<div id="error" class="error" style="display: none"></div>
+	</main>
+
+	<script type="module" src="reader.js"></script>
+</body>
+</html>

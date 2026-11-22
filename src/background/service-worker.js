@@ -446,6 +446,50 @@ rpcListen('models:delete', async ({ key }) => {
 	return true;
 });
 
+/* ---------------- 双语阅读模式 ---------------- */
+
+/**
+ * 提取当前页正文并打开阅读视图：
+ * 按需注入 Readability 与提取器（解析器 90KB 不常驻普通页面）→
+ * content 侧提取 → 写 storage → 新标签打开 reader 页（原页保留）。
+ */
+async function openReaderMode(tabId) {
+	await chrome.scripting.executeScript({
+		target: { tabId },
+		files: [
+			'vendor/readability/Readability.js',
+			'vendor/readability/Readability-readerable.js',
+			'src/content/article-extractor.js',
+		],
+	});
+	const [injection] = await chrome.scripting.executeScript({
+		target: { tabId },
+		func: () => (typeof OBT === 'object' && OBT.extractArticle ? OBT.extractArticle() : { ok: false, reason: 'not-injected' }),
+	});
+	const result = injection?.result;
+	if (!result?.ok) {
+		throw new Error(
+			result?.reason === 'no-content'
+				? '未能从该页面提取出正文（可能不是文章页）。可改用整页双语对照模式。'
+				: '阅读模式提取失败，请改用整页双语对照模式。',
+		);
+	}
+
+	const key = `reader:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+	await chrome.storage.local.set({ [key]: result.data });
+	const tab = await chrome.tabs.get(tabId);
+	await chrome.tabs.create({
+		url: `${chrome.runtime.getURL('src/reader/reader.html')}#${encodeURIComponent(key)}`,
+		index: tab.index + 1,
+	});
+	return { key };
+}
+
+rpcListen('reader:open', async ({ tabId } = {}) => {
+	if (!tabId) throw new Error('缺少 tabId');
+	return openReaderMode(tabId);
+});
+
 /* ---------------- RPC：OCR ---------------- */
 
 rpcListen('ocr:translate', async ({ imageDataUrl, langs, from, to, langPath }) => {
@@ -474,6 +518,8 @@ chrome.commands.onCommand.addListener(async (command) => {
 		await sendToTab(tab.id, { type: 'command:togglePageTranslation' });
 	} else if (command === 'ocr-screen-region') {
 		await sendToTab(tab.id, { type: 'command:ocrScreenRegion' });
+	} else if (command === 'open-reader-mode') {
+		openReaderMode(tab.id).catch((err) => console.warn('阅读模式打开失败:', err.message));
 	}
 });
 
@@ -611,6 +657,11 @@ chrome.runtime.onInstalled.addListener(async () => {
 			title: 'OCR 翻译此图片',
 			contexts: ['image'],
 		});
+		chrome.contextMenus.create({
+			id: 'reader-mode',
+			title: '双语阅读模式',
+			contexts: ['page'],
+		});
 	});
 });
 
@@ -636,6 +687,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 		// 只发给图片所在 frame（否则所有 frame 都会收到 undefined 的 srcUrl）
 		const frameId = typeof info.frameId === 'number' ? info.frameId : undefined;
 		await sendToTab(tab.id, { type: 'command:ocrImage', srcUrl: info.srcUrl }, frameId);
+	} else if (info.menuItemId === 'reader-mode') {
+		openReaderMode(tab.id).catch((err) => console.warn('阅读模式打开失败:', err.message));
 	}
 });
 

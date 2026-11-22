@@ -1,0 +1,208 @@
+/* 双语阅读视图：排版三变量驱动（字号 / 主题 / 对照风格），无外部依赖 */
+
+:root {
+	--measure: 42rem;
+	--reader-font-size: 18px;
+	--ink: #1f2430;
+	--ink-soft: #6b7280;
+	--paper: #ffffff;
+	--paper-soft: #f3f4f6;
+	--accent: #1a73e8;
+	--line: #e5e7eb;
+	--tran-ink: #475569;
+}
+
+body[data-theme='sepia'] {
+	--ink: #433422;
+	--ink-soft: #8a7555;
+	--paper: #f6efe2;
+	--paper-soft: #efe5d0;
+	--accent: #9a6b1f;
+	--line: #e3d5b8;
+	--tran-ink: #6d5a3a;
+}
+
+body[data-theme='dark'] {
+	--ink: #d7dce5;
+	--ink-soft: #8a93a3;
+	--paper: #16181d;
+	--paper-soft: #1e222a;
+	--accent: #7aa7ff;
+	--line: #2a2f3a;
+	--tran-ink: #9fb0c8;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--paper);
+	color: var(--ink);
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+		'Hiragino Sans GB', 'Microsoft YaHei', Georgia, serif;
+	transition: background-color 0.25s, color 0.25s;
+}
+
+/* ---------------- 工具栏 ---------------- */
+
+.toolbar {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 14px;
+	background: color-mix(in srgb, var(--paper) 92%, transparent);
+	backdrop-filter: blur(6px);
+	border-bottom: 1px solid var(--line);
+}
+
+.tb-btn {
+	border: 1px solid var(--line);
+	background: transparent;
+	color: var(--ink-soft);
+	border-radius: 6px;
+	padding: 4px 10px;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.tb-btn:hover {
+	color: var(--accent);
+	border-color: var(--accent);
+}
+
+.tb-btn.active {
+	color: var(--accent);
+	border-color: var(--accent);
+	background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.tb-group {
+	display: inline-flex;
+	gap: 4px;
+}
+
+.progress-hint {
+	flex: 1;
+	font-size: 12px;
+	color: var(--ink-soft);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ---------------- 正文版式 ---------------- */
+
+#reader-main {
+	max-width: var(--measure);
+	margin: 0 auto;
+	padding: 28px 20px 80px;
+	font-size: var(--reader-font-size);
+	line-height: 1.75;
+}
+
+.article-head {
+	margin-bottom: 1.6em;
+}
+
+#a-title {
+	font-size: 1.7em;
+	line-height: 1.3;
+	margin: 0 0 0.4em;
+}
+
+.meta {
+	font-size: 0.78em;
+	color: var(--ink-soft);
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+/* 对照单元：原文 + 译文。交替/双栏两种排布只换 grid 方向 */
+.pair {
+	margin: 0 0 1.15em;
+}
+
+.pair[data-block='h'] {
+	margin-top: 1.6em;
+}
+
+.pair .orig :is(h1, h2, h3, h4, h5, h6) {
+	font-size: 1em;
+	margin: 0;
+	font-weight: 600;
+}
+
+.pair .tran {
+	color: var(--tran-ink);
+	font-size: 0.97em;
+	margin-top: 0.35em;
+	padding-left: 0.9em;
+	border-left: 2px solid var(--line);
+}
+
+body[data-style='columns'] .pair {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0 22px;
+	align-items: start;
+}
+
+body[data-style='columns'] .pair .tran {
+	border-left: none;
+	border-top: 2px solid var(--line);
+	margin-top: 0;
+	padding-left: 0;
+	padding-top: 0.35em;
+}
+
+.pair.pending .tran .ph {
+	color: var(--ink-soft);
+	opacity: 0.6;
+	animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+	50% {
+		opacity: 0.25;
+	}
+}
+
+.pair .tran.fail {
+	color: #c0392b;
+	font-size: 0.85em;
+}
+
+/* 图片块 */
+figure.blk-img {
+	margin: 1.4em 0;
+	text-align: center;
+}
+
+figure.blk-img img {
+	max-width: 100%;
+	border-radius: 6px;
+}
+
+figure.blk-img figcaption {
+	font-size: 0.78em;
+	color: var(--ink-soft);
+	margin-top: 6px;
+}
+
+/* 链接在阅读视图里保守着色 */
+#content a {
+	color: var(--accent);
+}
+
+.error {
+	margin: 40px auto;
+	max-width: 30rem;
+	text-align: center;
+	color: var(--tran-ink);
+}
