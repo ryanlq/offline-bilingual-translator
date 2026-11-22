@@ -268,9 +268,27 @@ async function flush() {
 /* ---------------- 工具栏 ---------------- */
 
 function wireToolbar() {
+	// 返回原文：阅读标签通过 openerTabId 记录了来源页（tabs.getCurrent 在扩展页不可靠）。
+	// 激活原标签后关闭自己；会话恢复等场景找不到来源时至少关闭自己。
 	document.getElementById('back').addEventListener('click', async () => {
-		const [tab] = await chrome.tabs.getCurrent();
-		if (tab) chrome.tabs.remove(tab.id);
+		let currentId = null;
+		try {
+			const [current] = await chrome.tabs.query({ active: true, currentWindow: true });
+			currentId = current?.id ?? null;
+			let source = null;
+			if (currentId != null) {
+				const tab = await chrome.tabs.get(currentId).catch(() => null);
+				source = tab?.openerTabId ?? null;
+			}
+			if (source != null) await chrome.tabs.update(source, { active: true });
+		} catch {
+			/* 查询失败也要关自己 */
+		}
+		try {
+			if (currentId != null) await chrome.tabs.remove(currentId);
+		} catch {
+			/* 标签可能已被关闭 */
+		}
 	});
 
 	for (const btn of document.querySelectorAll('.style-btn')) {

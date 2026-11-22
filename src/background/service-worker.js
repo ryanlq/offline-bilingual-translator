@@ -481,6 +481,7 @@ async function openReaderMode(tabId) {
 	await chrome.tabs.create({
 		url: `${chrome.runtime.getURL('src/reader/reader.html')}#${encodeURIComponent(key)}`,
 		index: tab.index + 1,
+		openerTabId: tabId, // 阅读页「返回原文」依赖它找到原标签
 	});
 	return { key };
 }
