@@ -7,13 +7,14 @@
  *   通过 rpcListen 以 `channel:` 事件通道持续推送。
  */
 
-const CALL_PREFIX = 'rpc:call:';
-const RESP_PREFIX = 'rpc:resp:';
+const CALL_PREFIX = 'rpc:call:';const RESP_PREFIX = 'rpc:resp:';
 const EVENT_PREFIX = 'rpc:event:';
 
 // 本地路由：Firefox 事件页中后台与引擎同上下文，rpcCall 直调本地 handler，
 // 绕过消息总线（sendMessage 不会送达本上下文的 onMessage 监听）。
 const localRoutes = new Map();
+
+
 
 let serial = 0;
 const pending = new Map();

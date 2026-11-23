@@ -110,11 +110,28 @@ function hexToBase64(hex) {
  * @param {{streamId: string, label: string, integrity?: string}} options
  * @returns {Promise<ArrayBuffer>}
  */
+// 注：不用 fetch 的 integrity 选项——SRI 与 HF 重定向/xet 分片存在兼容问题
+// （表现为笼统的 Failed to fetch），改为下载完成后手动 sha256 校验（下方既有逻辑）。
+async function fetchOnce(url) {
+	return fetch(url, { credentials: 'omit' });
+}
+
+/** 下载（带重试）：HF 的 xet CDN 偶发瞬时失败（TLS/连接重置），弱网尤其常见 */
+async function downloadWithRetry(url, opts) {
+	let lastErr = null;
+	for (const attempt of [1, 2, 3]) {
+		try {
+			return await fetchOnce(url, opts);
+		} catch (err) {
+			lastErr = err;
+			if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 1500));
+		}
+	}
+	throw lastErr;
+}
+
 async function downloadFile(url, { streamId, label, integrity }) {
-	const response = await fetch(url, {
-		credentials: 'omit',
-		...(integrity ? { integrity: `sha256-${hexToBase64(integrity)}` } : {}),
-	});
+	const response = await downloadWithRetry(url, { integrity });
 	if (!response.ok) throw new Error(`下载失败 ${response.status}: ${url}`);
 
 	if (!response.body) {
@@ -184,11 +201,13 @@ export async function ensureModelFile(fileSpec, { streamId, force = false }) {
 	}
 
 	const integrity = fileSpec.integrity !== false ? fileSpec.sha256 : null;
-	const buffer = await downloadFile(fileSpec.url, {
-		streamId,
-		label: fileSpec.name,
-		integrity,
-	});
+	let buffer;
+	try {
+		buffer = await downloadFile(fileSpec.url, { streamId, label: fileSpec.name, integrity });
+	} catch (err) {
+		throw err;
+	}
+
 
 	if (fileSpec.sha256) {
 		const hash = await sha256Hex(buffer);

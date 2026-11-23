@@ -285,7 +285,7 @@ ok(`检查 ${closedShadowHits} 处 closed Shadow DOM 用法`);
 		}
 		scanned++;
 	}
-	if (!problems.some((p) => p.startsWith('远程代码引用')))
+	if (!problems.some((p) => String(p.message ?? p).startsWith('远程代码引用')))
 		ok(`远程代码引用扫描：${scanned} 个文件全部干净`);
 }
 
@@ -322,7 +322,7 @@ ok('content_scripts 声明有效');
 		}
 		checked++;
 	}
-	if (!problems.some((p) => p.startsWith('JS 语法错误')))
+	if (!problems.some((p) => String(p.message ?? p).startsWith('JS 语法错误')))
 		ok(`vendor/src 全部 ${checked} 个 JS 语法完整（node --check）`);
 }
 

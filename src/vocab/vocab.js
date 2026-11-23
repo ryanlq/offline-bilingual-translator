@@ -115,13 +115,12 @@ function downloadTsv() {
 /* ---------------- TTS 发音包 ---------------- */
 
 const TTS_VOICES = [
-	'expr-voice-2-f', 'expr-voice-2-m', 'expr-voice-3-f', 'expr-voice-3-m',
-	'expr-voice-4-f', 'expr-voice-4-m', 'expr-voice-5-f', 'expr-voice-5-m',
+	'serena', 'otis', 'eleanor', 'martha', 'iris', 'grace', 'edith', 'vincent', 'max', 'danny',
 ];
 
 async function ttsSettings() {
 	const { [ANKI_SETTINGS_KEY]: saved } = await chrome.storage.local.get(ANKI_SETTINGS_KEY);
-	return { ttsVoice: 'expr-voice-2-f', ...(saved && typeof saved === 'object' ? saved : {}) };
+	return { ttsVoice: 'serena', ...(saved && typeof saved === 'object' ? saved : {}) };
 }
 
 async function refreshTts() {
@@ -132,7 +131,7 @@ async function refreshTts() {
 		$('tts-status').className = `status ${installed ? 'ok' : ''}`;
 		$('tts-install').style.display = installed ? 'none' : '';
 		const { [ANKI_SETTINGS_KEY]: saved } = await chrome.storage.local.get(ANKI_SETTINGS_KEY);
-		const voice = saved?.ttsVoice ?? 'expr-voice-2-f';
+		const voice = saved?.ttsVoice ?? 'serena';
 		if (TTS_VOICES.includes(voice)) $('tts-voice').value = voice;
 	} catch {
 		$('tts-status').textContent = '状态未知';

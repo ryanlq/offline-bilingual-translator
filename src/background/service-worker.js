@@ -9,6 +9,9 @@
  */
 
 import { rpcCall, rpcListen, rpcEmit } from '../shared/rpc.js';
+
+
+
 import {
 	BUILTIN_MODELS,
 	S3_REGISTRY_URL,
@@ -63,13 +66,13 @@ async function ensureOffscreen() {
 async function offscreenReady() {
 	if (LOCAL_ENGINE) return; // 引擎已随本页加载，rpcCall 走本地路由，无需 ping
 	// 创建后轮询 ping，避免 ready 事件先于订阅的竞态
-	for (let i = 0; i < 40; i++) {
+	for (let i = 0; i < 120; i++) {
 		await ensureOffscreen();
 		try {
 			await rpcCall('offscreen:ping', null);
 			return;
 		} catch {
-			await new Promise((resolve) => setTimeout(resolve, 250));
+			await new Promise((resolve) => setTimeout(resolve, 500));
 		}
 	}
 	throw new Error('翻译引擎启动超时');
@@ -641,8 +644,7 @@ rpcListen('anki:push', async ({ ids, deckName, modelName, frontField, backField,
 			// 音频协议：audio[id] = { data: base64, filename }（由本地 TTS 发音包生成后传入）
 			const audioSpec = audio?.[id];
 			if (audioSpec?.data && audioSpec?.filename) {
-				const soundName = audioSpec.filename;
-				fields['发音'] = `[sound:${soundName}]`;
+				const soundName = audioSpec.filename.replace(/[^\w.-]/g, '_'); // id 含冒号会被 Anki 媒体库拒绝
 				note.audio = [{ data: audioSpec.data, filename: soundName, fields: ['发音'] }];
 			}
 			await ankiInvoke('addNote', { note });
@@ -657,19 +659,43 @@ rpcListen('anki:push', async ({ ids, deckName, modelName, frontField, backField,
 
 /* ---------------- RPC：TTS 发音包（转发到 offscreen 引擎） ---------------- */
 
-// offscreen 文档未创建时无人应答 tts:*，这里先确保 offscreen 就绪再转发；
-// Firefox 引擎随后台页加载，rpc 本地路由直调，offscreenReady 为空操作。
+// offscreen 文档没有 host 权限的 CORS 豁免（HF xet CDN 重定向无 CORS 头会被拦），
+// 因此下载由后台（SW/事件页，有权限豁免）完成后写入 IndexedDB；
+// offscreen/background 引擎只从 IndexedDB 读取并合成。
+const TTS2_ASSETS = [
+	{
+		direction: 'tts2', part: 'model', name: 'kitten_tts_2_nano_en.onnx',
+		url: 'https://huggingface.co/KittenML/kitten-tts-2-nano/resolve/main/kitten_tts_2_nano_en.onnx',
+		sha256: '3a63a18b3f5cb1dbd99d7f53cb60fdb995e23a21e98d21f9f32d378668dab98e',
+	},
+	{
+		direction: 'tts2', part: 'voices', name: 'voices_en.npz',
+		url: 'https://huggingface.co/KittenML/kitten-tts-2-nano/resolve/main/voices_en.npz',
+		sha256: '8dd673489b0130f23dd32d8c8b7cd49cf454cad029eaa6f0cd8c0f386c374e3e',
+	},
+	{
+		direction: 'tts2', part: 'cmu', name: 'cmu_misaki_us.json',
+		url: 'https://huggingface.co/KittenML/kitten-tts-2-nano/resolve/main/g2p/cmu_misaki_us.json',
+		sha256: 'ae564e1a76df3501058a5ec99d135d016759c9475042fb6c3811374daee1ef04',
+	},
+];
+
 rpcListen('tts:status', async () => {
-	await offscreenReady();
-	return rpcCall('tts-engine:status');
+	const cached = await getModelFile('tts2', 'model');
+	const total = TTS2_ASSETS.reduce((sum, a) => sum + 8828928 + 5224448 + 3418112, 0) || 16700000;
+	return { installed: Boolean(cached), size: 16700000 };
 });
 
 rpcListen('tts:download', async ({ streamId } = {}) => {
-	await offscreenReady();
-	return rpcCall('tts-engine:download', { streamId: streamId ?? 'tts-pack' });
+	const sid = streamId ?? 'tts-pack';
+	for (const spec of TTS2_ASSETS) {
+		await ensureModelFile(spec, { streamId: sid });
+	}
+	return { ok: true };
 });
 
 rpcListen('tts:synthesize', async (payload) => {
+	// 合成在 offscreen/background 引擎上下文执行（asset 已在 IndexedDB）
 	await offscreenReady();
 	return rpcCall('tts-engine:synthesize', payload);
 });

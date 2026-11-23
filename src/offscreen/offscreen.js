@@ -11,6 +11,7 @@
  */
 
 import { rpcListen, rpcEmit } from '../shared/rpc.js';
+
 import './tts-engine.js'; // TTS 发音包通道（tts:status/download/synthesize）
 import { DEFAULT_OCR_LANG_PATH } from '../shared/models-registry.js';
 import { ensureModelFile } from '../background/model-store.js';
@@ -433,6 +434,7 @@ rpcListen('ocr:recognize', runOcr);
 
 /** 后台轮询 offscreen 是否就绪（避免启动竞态） */
 rpcListen('offscreen:ping', async () => true);
+
 
 /* ---------------- 图片处理 ---------------- */
 
