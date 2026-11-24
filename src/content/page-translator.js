@@ -199,7 +199,7 @@
 					} catch (err) {
 						console.warn('OBT 翻译失败:', err.message);
 						// 失败片与其后所有分片统一标记：否则剩余段落永远停在「…」
-						const note = `⚠ 翻译失败（${err.message}）`;
+						const note = `⚠ 翻译失败：${err.message}（修复后重新开启翻译可重试）`;
 						for (let j = start; j < items.length; j++) {
 							this.injector.setTranslation(items[j].element, note);
 						}

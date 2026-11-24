@@ -62,12 +62,19 @@ function renderList() {
 			new Date(entry.createdAt).toLocaleString(),
 		];
 		if (entry.title || entry.sourceUrl) {
-			const a = document.createElement('a');
-			a.href = entry.sourceUrl || '#';
-			a.textContent = entry.title || entry.sourceUrl;
-			a.target = '_blank';
-			a.rel = 'noreferrer';
-			meta.appendChild(a);
+			// 仅 http(s) 链接可点（防 javascript: 等协议注入），其余按纯文本展示
+			if (/^https?:/i.test(entry.sourceUrl || '')) {
+				const a = document.createElement('a');
+				a.href = entry.sourceUrl;
+				a.textContent = entry.title || entry.sourceUrl;
+				a.target = '_blank';
+				a.rel = 'noreferrer';
+				meta.appendChild(a);
+			} else {
+				const span = document.createElement('span');
+				span.textContent = entry.title || '';
+				meta.appendChild(span);
+			}
 		}
 		for (const bit of bits) {
 			if (!bit) continue;
@@ -149,7 +156,7 @@ function wireTts() {
 			}
 		});
 		try {
-			await rpcCall('tts:download', { streamId: 'tts-pack' });
+			await rpcCall('tts:download', { streamId: 'tts-pack' }, { timeoutMs: 0 }); // 弱网下载可达数分钟
 			$('tts-status').textContent = '安装完成';
 			await refreshTts();
 			flash('发音包安装完成 ✓');
@@ -169,27 +176,36 @@ function wireTts() {
 	});
 }
 
-/** 为英文条目合成发音（发音包已安装时）；返回 audio 映射供 anki:push 使用 */
+/** 为英文条目合成发音（发音包已安装时）；返回 audio 映射供 anki:push 使用。
+ * 批量串行合成，期间按 Esc 可取消（已生成的保留，剩余条目无音频推送）。 */
 async function generateAudioFor(entries) {
 	const status = await rpcCall('tts:status');
-	if (!status?.installed) return { audio: {}, generated: 0 };
+	if (!status?.installed) return { audio: {}, generated: 0, cancelled: false };
 	const { ttsVoice } = await ttsSettings();
 	const audio = {};
+	const eligible = entries.filter((e) => e.pair?.startsWith('en') && e.source.trim());
 	let generated = 0;
-	let i = 0;
-	for (const entry of entries) {
-		if (!entry.pair?.startsWith('en') || !entry.source.trim()) continue;
-		i++;
-		flash(`生成发音 ${i}…`);
-		try {
-			const { wav } = await rpcCall('tts:synthesize', { text: entry.source, voice: ttsVoice });
-			audio[entry.id] = { data: wav, filename: `obt-${entry.id}.wav` };
-			generated++;
-		} catch {
-			/* 单条合成失败：无音频推送 */
+	let cancelled = false;
+	const onCancel = (event) => {
+		if (event.key === 'Escape') cancelled = true;
+	};
+	document.addEventListener('keydown', onCancel);
+	try {
+		for (const entry of eligible) {
+			if (cancelled) break;
+			flash(`生成发音 ${generated + 1}/${eligible.length}…（Esc 取消）`);
+			try {
+				const { wav } = await rpcCall('tts:synthesize', { text: entry.source, voice: ttsVoice });
+				audio[entry.id] = { data: wav, filename: `obt-${entry.id}.wav` };
+				generated++;
+			} catch {
+				/* 单条合成失败：无音频推送 */
+			}
 		}
+	} finally {
+		document.removeEventListener('keydown', onCancel);
 	}
-	return { audio, generated };
+	return { audio, generated, cancelled };
 }
 
 async function createObtTemplate() {
@@ -257,6 +273,11 @@ async function connectAnki() {
 		const saved = await ankiSettings();
 		const meta = await rpcCall('anki:meta');
 		fillSelect($('anki-deck'), meta.deckNames, saved.deckName);
+		// 默认牌组名（Default）在本地化 Anki 里不存在（如中文版为「系统默认」）：
+		// 未配置且只有一个牌组时自动选中，避免首次连接显示「—」
+		if (!$('anki-deck').value && meta.deckNames.length === 1) {
+			$('anki-deck').value = meta.deckNames[0];
+		}
 		fillSelect($('anki-model'), meta.modelNames, saved.modelName);
 		await loadFields(saved);
 		$('anki-tags').value = saved.tags || '';
@@ -290,7 +311,7 @@ async function pushToAnki() {
 	$('anki-result').textContent = '推送中…';
 	try {
 		// 发音包已安装时为英文条目合成发音，随卡上传
-		const { audio } = await generateAudioFor(visibleEntries());
+		const { audio, cancelled: audioCancelled } = await generateAudioFor(visibleEntries());
 		const result = await rpcCall('anki:push', {
 			ids,
 			deckName: $('anki-deck').value || settings.deckName,
@@ -301,8 +322,10 @@ async function pushToAnki() {
 			audio,
 		});
 		const bits = [`新增 ${result.added}`, `跳过(重复) ${result.skipped}`];
+		if (audioCancelled) bits.push('发音生成已取消');
 		if (result.errors?.length) bits.push(`失败 ${result.errors.length}`);
 		$('anki-result').textContent = bits.join(' · ');
+		clearTimeout(flashTimer); // 保留最终统计，不被进度闪现覆盖
 		if (result.errors?.length) console.warn('Anki 失败明细:', result.errors);
 	} catch (err) {
 		$('anki-result').textContent = `推送失败：${err.message.slice(0, 80)}`;

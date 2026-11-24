@@ -247,14 +247,18 @@ async function ensurePathLoaded(path, { streamId, force = false } = {}) {
 			const pairKey = `${model.from}${model.to}`;
 			const meta = await resolveModelMeta(pairKey);
 			const { fileSpecs } = getModelFileSpecs(model, meta);
-			await rpcCall('engine:ensureModel', {
+			await rpcCall(
+				'engine:ensureModel',
+				{
 				direction: model,
 				pairKey,
 				fileSpecs,
 				config: meta.config ?? null,
 				streamId: streamId ?? `model-${pairKey}`,
 				force,
-			});
+			},
+				{ timeoutMs: 0 }, // 模型下载可达数分钟，豁免 RPC 超时
+			);
 		}
 		loadedPairs.add(path.key);
 		return true;
@@ -680,10 +684,21 @@ const TTS2_ASSETS = [
 	},
 ];
 
+/** 三件资产合计字节数（model 17,364,795 + voices 5,224,846 + cmu 3,418,388） */
+const TTS2_SIZE = 26008029;
+
 rpcListen('tts:status', async () => {
-	const cached = await getModelFile('tts2', 'model');
-	const total = TTS2_ASSETS.reduce((sum, a) => sum + 8828928 + 5224448 + 3418112, 0) || 16700000;
-	return { installed: Boolean(cached), size: 16700000 };
+	// 三件资产（model/voices/cmu）全部就绪且校验和匹配才算已安装：
+	// 下载中断在 model 之后会误报「已安装」，到合成时才失败
+	let installed = true;
+	for (const spec of TTS2_ASSETS) {
+		const cached = await getModelFile('tts2', spec.part);
+		if (!cached || (spec.sha256 && cached.sha256 !== spec.sha256)) {
+			installed = false;
+			break;
+		}
+	}
+	return { installed, size: TTS2_SIZE };
 });
 
 rpcListen('tts:download', async ({ streamId } = {}) => {
@@ -774,9 +789,6 @@ async function handleContentCommand(payload, sender) {
 	} else if (payload.type === 'ocr-image-data') {
 		const { text, translation } = await ocrTranslate(payload.imageDataUrl, payload);
 		await sendToTab(tabId, { type: 'ocr:result', text, translation }, sender.frameId);
-	} else if (payload.type === 'translate-texts') {
-		const translations = await translateTexts(payload.texts, payload.from, payload.to);
-		return translations;
 	}
 	return null;
 }

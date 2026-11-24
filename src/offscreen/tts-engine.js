@@ -2,7 +2,7 @@
  * KittenTTS 2 Nano 发音引擎（英文，offscreen/background 上下文）
  *
  * 管线：tts-norm 规范化 → 词典链 G2P（gold → silver → CMUdict → espeak IPA 兜底）
- *     → tokens [0]+ids+[10,0] → nano int4 ONNX → 24kHz 音频
+ *     → tokens [0]+ids+[10,0] → nano int8 ONNX → 24kHz 音频
  *
  * 资产策略（重要）：
  * - 下载一律由后台完成（SW 有 host 权限的 CORS 豁免；offscreen 文档没有——
@@ -10,7 +10,7 @@
  * - offscreen/background 只从 IndexedDB 读取已下载的资产并合成
  * - 随包分发：ort.mjs / ort-wasm / phonemizer.js / vocab.json / us_gold / us_silver /
  *   voices-en.json（音色名表）
- * - 按需下载（首次启用发音包，约 16.7MB，sha256 校验，model-store 缓存）：
+ * - 按需下载（首次启用发音包，约 26MB，sha256 校验，model-store 缓存）：
  *   nano int4 ONNX / voices_en.npz / cmu_misaki_us.json
  *
  * 模型来源 KittenML/kitten-tts-2-nano（Apache-2.0）；推理契约：
@@ -28,7 +28,6 @@ import { loadNpz } from '../../vendor/kitten-tts-2/zip-npz.js';
 
 const SAMPLE_RATE = 24000;
 const GAP_SAMPLES = Math.round(0.15 * SAMPLE_RATE); // 分块间 0.15s 静音（对齐官方合成）
-const MAX_PHON = 350;
 
 /** @type {{ session: any, ort: any, g2p: any, packs: any, vocabTable: any } | null} */
 let engine = null;
@@ -104,19 +103,6 @@ function tokensOf(phonemes, vocab) {
 	return [0, ...ids, 10, 0];
 }
 
-/** 音素串按 350 切块（空格处切分，对齐官方 _wrap） */
-function wrapPhonemes(ps, maxPhon = MAX_PHON) {
-	const chunks = [];
-	while (ps.length > maxPhon) {
-		let cut = ps.lastIndexOf(' ', maxPhon);
-		cut = cut > 0 ? cut : maxPhon;
-		chunks.push(ps.slice(0, cut));
-		ps = ps.slice(cut).trim();
-	}
-	if (ps) chunks.push(ps);
-	return chunks;
-}
-
 function bytesToBase64(bytes) {
 	const parts = [];
 	for (let i = 0; i < bytes.length; i += 8192) {
@@ -131,7 +117,7 @@ function bytesToBase64(bytes) {
  * @returns {Promise<{ wav: string, duration: number }>}
  */
 export async function synthesize({ text, voice = 'serena', speed = 1.0 }) {
-	
+	speed = Math.min(2, Math.max(0.5, Number(speed) || 1)); // 防御性钳制
 	const instance = await ensureEngine();
 	const { session, ort, g2p, packs, vocabTable } = instance;
 
@@ -190,10 +176,8 @@ export async function synthesize({ text, voice = 'serena', speed = 1.0 }) {
 
 rpcListen('tts-engine:status', async () => {
 	try {
-		const { getModelFile } = await import('../background/model-store.js');
 		const cached = await getModelFile('tts2', 'model');
-		const total = 8828928 + 5224448 + 3418112;
-		return { installed: Boolean(cached), size: total };
+		return { installed: Boolean(cached), size: 26008029 };
 	} catch {
 		return { installed: false };
 	}

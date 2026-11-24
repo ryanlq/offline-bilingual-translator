@@ -107,7 +107,7 @@ async function downloadModel(key, row) {
 	});
 
 	try {
-		await rpcCall('models:download', { key });
+		await rpcCall('models:download', { key }, { timeoutMs: 0 }); // 语言包下载可达数分钟
 		entry.bar.style.width = '100%';
 		entry.text.textContent = '安装完成 ✓';
 		setTimeout(() => {

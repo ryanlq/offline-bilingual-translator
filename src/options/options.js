@@ -224,7 +224,7 @@ async function downloadModel(key, item, onDone) {
 	});
 
 	try {
-		await rpcCall('models:download', { key });
+		await rpcCall('models:download', { key }, { timeoutMs: 0 }); // 语言包下载可达数分钟
 	} catch (err) {
 		alert(`模型下载失败：${err.message}`);
 	}

@@ -37,7 +37,8 @@
 			 * 宿主元素 → shadow root。
 			 * 注意：closed 模式下 element.shadowRoot 恒为 null，必须自行持有引用，
 			 * 否则后续所有样式更新与译文写入都会抛 TypeError。
-			/** @type {WeakMap<HTMLElement, ShadowRoot>} */
+			 * @type {WeakMap<HTMLElement, ShadowRoot>}
+			 */
 			this.roots = new WeakMap();
 			/** 宿主元素 → 原文元素（悬停反查用，避免每次 mouseover 线性扫 hosts） */
 			this.hostToElement = new WeakMap();
@@ -249,7 +250,7 @@
 	}
 
 	/** 译文输出允许保留的内联标签（其余剥壳保字，防引擎 HTML 子集外的东西破坏页面） */
-	const ALLOWED_OUTPUT_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'SPAN', 'SMALL', 'SUB', 'SUP', 'ABBR', 'A']);
+	const ALLOWED_OUTPUT_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'SPAN', 'SMALL', 'SUB', 'SUP', 'ABBR', 'A', 'CODE']);
 
 	/**
 	 * 净化引擎返回的 HTML 片段：白名单标签重建，属性只留 a[href] 且仅 http(s)。

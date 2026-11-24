@@ -7,7 +7,8 @@
  *   通过 rpcListen 以 `channel:` 事件通道持续推送。
  */
 
-const CALL_PREFIX = 'rpc:call:';const RESP_PREFIX = 'rpc:resp:';
+const CALL_PREFIX = 'rpc:call:';
+const RESP_PREFIX = 'rpc:resp:';
 const EVENT_PREFIX = 'rpc:event:';
 
 // 本地路由：Firefox 事件页中后台与引擎同上下文，rpcCall 直调本地 handler，
@@ -23,13 +24,14 @@ const pending = new Map();
  * 发起一次 RPC 调用
  * @param {string} channel
  * @param {any} payload
+ * @param {{timeoutMs?: number}} [options] 超时毫秒（默认 120s；0 = 不限时，模型下载等长操作用）
  * @returns {Promise<any>}
  */
-export function rpcCall(channel, payload) {
+export function rpcCall(channel, payload, { timeoutMs = 120_000 } = {}) {
 	// 本地直调（Firefox 事件页）：引擎 handler 已通过 rpcListen 注册在本上下文
 	if (localRoutes.has(channel)) {
 		const handler = localRoutes.get(channel);
-		return Promise.resolve()
+		const task = Promise.resolve()
 			.then(() => handler(payload, null))
 			.then(
 				(result) => result,
@@ -37,16 +39,31 @@ export function rpcCall(channel, payload) {
 					throw error instanceof Error ? error : new Error(String(error));
 				},
 			);
+		// 本地 handler 卡死（引擎内部挂起）同样受超时保护；0 = 不限时
+		if (timeoutMs > 0) {
+			let timer = null;
+			return Promise.race([
+				task.finally(() => clearTimeout(timer)),
+				new Promise((_, reject) => {
+					timer = setTimeout(
+						() => reject(new Error(`RPC 超时: ${channel}（本地调用 ${timeoutMs}ms 无响应）`)),
+						timeoutMs,
+					);
+				}),
+			]);
+		}
+		return task;
 	}
 
 	return new Promise((resolve, reject) => {
 		const id = `${Date.now()}-${++serial}`;
-		pending.set(id, { resolve, reject, channel });
+		const entry = { resolve, reject, channel, timer: null };
+		pending.set(id, entry);
 
 		const settleFromResponse = (resp) => {
-			const entry = pending.get(id);
-			if (!entry) return;
+			if (pending.get(id) !== entry) return;
 			pending.delete(id);
+			clearTimeout(entry.timer);
 			if (resp?.error) {
 				const err = new Error(resp.error.message ?? String(resp.error));
 				err.stack = resp.error.stack;
@@ -64,16 +81,31 @@ export function rpcCall(channel, payload) {
 					settleFromResponse(resp);
 					return;
 				}
-				const entry = pending.get(id);
-				pending.delete(id);
-				entry?.reject(
-					new Error(`RPC 无响应: ${channel}（接收端未注册或已休眠）`),
-				);
+				if (pending.get(id) === entry) {
+					pending.delete(id);
+					clearTimeout(entry.timer);
+					entry.reject(
+						new Error(`RPC 无响应: ${channel}（接收端未注册或已休眠）`),
+					);
+				}
 			})
 			.catch((err) => {
-				pending.delete(id);
+				if (pending.get(id) === entry) pending.delete(id);
+				clearTimeout(entry.timer);
 				reject(err);
 			});
+
+		// 超时兜底：接收端死亡（offscreen 回收、SW 休眠等）时避免调用方永久挂起
+		if (timeoutMs > 0) {
+			entry.timer = setTimeout(() => {
+				if (pending.get(id) === entry) {
+					pending.delete(id);
+					entry.reject(
+						new Error(`RPC 超时: ${channel}（${timeoutMs}ms 无响应）`),
+					);
+				}
+			}, timeoutMs);
+		}
 	});
 }
 
@@ -145,6 +177,7 @@ chrome.runtime.onMessage.addListener((message) => {
 		const entry = pending.get(message.id);
 		if (entry) {
 			pending.delete(message.id);
+			clearTimeout(entry.timer);
 			if (message.error) {
 				const err = new Error(message.error.message);
 				err.stack = message.error.stack;
