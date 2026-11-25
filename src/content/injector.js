@@ -285,4 +285,6 @@
 	}
 
 	OBT.BilingualInjector = BilingualInjector;
+	/** 供划词弹窗等复用：引擎/选区 HTML 片段白名单净化（剥壳保字 + a[href] 限 http(s)） */
+	OBT.sanitizeTranslationHtml = sanitizeTranslationHtml;
 })();
