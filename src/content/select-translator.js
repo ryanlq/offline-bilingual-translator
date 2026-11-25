@@ -63,6 +63,25 @@
 			const frag = selection.getRangeAt(0).cloneContents();
 			const div = document.createElement('div');
 			div.appendChild(frag);
+			// 块级元素剥壳后多段文本会粘成一行（源 HTML 块间常无空白节点）：
+			// 在每个块级子树后补换行，<br> 也转成换行，配合 pre-wrap 保留多行结构
+			const BLOCKS = new Set([
+				'P', 'DIV', 'LI', 'UL', 'OL', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+				'BLOCKQUOTE', 'PRE', 'TABLE', 'TR', 'SECTION', 'ARTICLE', 'FIGURE', 'FIGCAPTION', 'DT', 'DD',
+			]);
+			const markBlocks = (container) => {
+				for (const el of [...container.children]) {
+					if (BLOCKS.has(el.tagName)) {
+						markBlocks(el);
+						el.after(document.createTextNode('\n'));
+					} else if (el.tagName === 'BR') {
+						el.replaceWith(document.createTextNode('\n'));
+					} else {
+						markBlocks(el);
+					}
+				}
+			};
+			markBlocks(div);
 			const html = div.innerHTML;
 			return /<[a-z][^>]*>/i.test(html) ? html : null;
 		}
@@ -176,7 +195,7 @@
 						letter-spacing: 0.08em;
 						user-select: none;
 					}
-					.content { line-height: 1.7; overflow-wrap: break-word; }
+					.content { line-height: 1.7; overflow-wrap: break-word; white-space: pre-wrap; }
 					.original .content { color: #3c4043; font-size: 13px; }
 					.translation .content { color: #1a73e8; font-size: 14px; }
 					.content a { color: inherit; text-decoration: underline; }
