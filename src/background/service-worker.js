@@ -666,23 +666,44 @@ rpcListen('anki:push', async ({ ids, deckName, modelName, frontField, backField,
 // offscreen 文档没有 host 权限的 CORS 豁免（HF xet CDN 重定向无 CORS 头会被拦），
 // 因此下载由后台（SW/事件页，有权限豁免）完成后写入 IndexedDB；
 // offscreen/background 引擎只从 IndexedDB 读取并合成。
+const MS = 'https://modelscope.cn/models/KittenML/kitten-tts-2-nano/resolve/master/'; // 魔搭镜像（国内快一个量级）
 const TTS2_ASSETS = [
 	{
 		direction: 'tts2', part: 'model', name: 'kitten_tts_2_nano_en.onnx',
 		url: 'https://huggingface.co/KittenML/kitten-tts-2-nano/resolve/main/kitten_tts_2_nano_en.onnx',
+		mirrors: [MS + 'kitten_tts_2_nano_en.onnx'],
 		sha256: '3a63a18b3f5cb1dbd99d7f53cb60fdb995e23a21e98d21f9f32d378668dab98e',
 	},
 	{
 		direction: 'tts2', part: 'voices', name: 'voices_en.npz',
 		url: 'https://huggingface.co/KittenML/kitten-tts-2-nano/resolve/main/voices_en.npz',
+		mirrors: [MS + 'voices_en.npz'],
 		sha256: '8dd673489b0130f23dd32d8c8b7cd49cf454cad029eaa6f0cd8c0f386c374e3e',
 	},
 	{
 		direction: 'tts2', part: 'cmu', name: 'cmu_misaki_us.json',
 		url: 'https://huggingface.co/KittenML/kitten-tts-2-nano/resolve/main/g2p/cmu_misaki_us.json',
+		mirrors: [MS + 'g2p/cmu_misaki_us.json'],
 		sha256: 'ae564e1a76df3501058a5ec99d135d016759c9475042fb6c3811374daee1ef04',
 	},
 ];
+
+/** 下载通道探测（TTS 资产双通道）：HF 与魔搭谁先应答谁优先；
+ * 双通/双挂都按 HF 顺序（镜像作重试兜底）。结果会话内缓存。 */
+let ttsChannel = null;
+async function getTtsChannel() {
+	if (ttsChannel) return ttsChannel;
+	const probe = (u) =>
+		fetch(u, { method: 'HEAD', credentials: 'omit', signal: AbortSignal.timeout(6000) })
+			.then(() => 1)
+			.catch(() => 0);
+	const [hf, ms] = await Promise.all([
+		probe(TTS2_ASSETS[2].url), // cmu（最小文件）做探测目标
+		probe(TTS2_ASSETS[2].mirrors[0]),
+	]);
+	ttsChannel = ms && !hf ? 'ms' : 'hf';
+	return ttsChannel;
+}
 
 /** 三件资产合计字节数（model 17,364,795 + voices 5,224,846 + cmu 3,418,388） */
 const TTS2_SIZE = 26008029;
@@ -703,10 +724,16 @@ rpcListen('tts:status', async () => {
 
 rpcListen('tts:download', async ({ streamId } = {}) => {
 	const sid = streamId ?? 'tts-pack';
+	const channel = await getTtsChannel();
+	rpcEmit(sid, { channel }); // UI 显示当前通道（ms = 魔搭 / hf = HuggingFace）
 	for (const spec of TTS2_ASSETS) {
-		await ensureModelFile(spec, { streamId: sid });
+		const urls =
+			channel === 'ms'
+				? [spec.mirrors[0], spec.url] // 魔搭优先，HF 兜底
+				: [spec.url, ...(spec.mirrors || [])]; // HF 优先，魔搭兜底
+		await ensureModelFile({ ...spec, urls }, { streamId: sid });
 	}
-	return { ok: true };
+	return { ok: true, channel };
 });
 
 rpcListen('tts:synthesize', async (payload) => {

@@ -151,7 +151,11 @@ function wireTts() {
 		button.disabled = true;
 		$('tts-status').textContent = '下载中…';
 		const unsubscribe = rpcSubscribe('tts-pack', (chunk) => {
-			if (chunk.label?.includes('onnx') && chunk.label) {
+			if (chunk.channel) {
+				$('tts-status').textContent = `下载中…（${chunk.channel === 'ms' ? '魔搭镜像' : 'HuggingFace'}）`;
+			} else if (chunk.note) {
+				$('tts-status').textContent = `下载中… ${chunk.note}`;
+			} else if (chunk.label?.includes('onnx') && chunk.label) {
 				$('tts-status').textContent = `下载中… ${chunk.label.slice(0, 24)}`;
 			}
 		});

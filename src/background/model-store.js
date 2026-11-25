@@ -105,65 +105,88 @@ function hexToBase64(hex) {
 }
 
 /**
- * 下载文件，推送进度事件
+ * 下载单个 URL（带失速检测）：连接活着但长时间无数据（墙内常见：连接建立后
+ * 数据被掐）时主动中止，交给上层切换下一个下载源，避免用户面对无限转圈。
  * @param {string} url
- * @param {{streamId: string, label: string, integrity?: string}} options
+ * @param {{streamId: string, label: string}} options
  * @returns {Promise<ArrayBuffer>}
  */
 // 注：不用 fetch 的 integrity 选项——SRI 与 HF 重定向/xet 分片存在兼容问题
 // （表现为笼统的 Failed to fetch），改为下载完成后手动 sha256 校验（下方既有逻辑）。
-async function fetchOnce(url) {
-	return fetch(url, { credentials: 'omit' });
+async function downloadFile(url, { streamId, label }) {
+	const controller = new AbortController();
+	/** 30 秒无新数据判停滞（重置式看门狗：每个分片到达都续期） */
+	let stallTimer = null;
+	const resetStall = () => {
+		clearTimeout(stallTimer);
+		stallTimer = setTimeout(() => controller.abort(new Error('下载停滞（30 秒无数据）')), 30_000);
+	};
+
+	try {
+		resetStall();
+		const response = await fetch(url, { credentials: 'omit', signal: controller.signal });
+		if (!response.ok) throw new Error(`下载失败 ${response.status}: ${url}`);
+
+		if (!response.body) {
+			return await response.arrayBuffer();
+		}
+
+		const reader = response.body.getReader();
+		const contentLength = Number(response.headers.get('content-length')) || 0;
+		const chunks = [];
+		let received = 0;
+
+		for (;;) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			resetStall();
+			chunks.push(value);
+			received += value.byteLength;
+			if (contentLength > 0) {
+				rpcEmit(streamId, {
+					label,
+					loaded: received,
+					total: contentLength,
+				});
+			}
+		}
+
+		const buffer = new Uint8Array(received);
+		let offset = 0;
+		for (const chunk of chunks) {
+			buffer.set(chunk, offset);
+			offset += chunk.byteLength;
+		}
+		return buffer.buffer;
+	} finally {
+		clearTimeout(stallTimer);
+	}
 }
 
-/** 下载（带重试）：HF 的 xet CDN 偶发瞬时失败（TLS/连接重置），弱网尤其常见 */
-async function downloadWithRetry(url, opts) {
+/**
+ * 多通道下载：按序尝试 urls（主源 → 镜像），每个源 2 次重试
+ * （HF 的 xet CDN 偶发 TLS/连接重置，瞬时失败重试同源比立刻换源更划算）。
+ * @param {string[]} urls
+ * @param {{streamId: string, label: string}} options
+ * @returns {Promise<ArrayBuffer>}
+ */
+async function downloadFromUrls(urls, { streamId, label }) {
 	let lastErr = null;
-	for (const attempt of [1, 2, 3]) {
-		try {
-			return await fetchOnce(url, opts);
-		} catch (err) {
-			lastErr = err;
-			if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 1500));
+	for (const url of urls) {
+		for (let attempt = 1; attempt <= 2; attempt++) {
+			try {
+				return await downloadFile(url, { streamId, label });
+			} catch (err) {
+				lastErr = err;
+				if (attempt < 2) {
+					await new Promise((r) => setTimeout(r, attempt * 1500));
+				} else if (url !== urls[urls.length - 1]) {
+					rpcEmit(streamId, { label, note: '当前下载源失败，切换下一个…' });
+				}
+			}
 		}
 	}
 	throw lastErr;
-}
-
-async function downloadFile(url, { streamId, label, integrity }) {
-	const response = await downloadWithRetry(url, { integrity });
-	if (!response.ok) throw new Error(`下载失败 ${response.status}: ${url}`);
-
-	if (!response.body) {
-		return response.arrayBuffer();
-	}
-
-	const reader = response.body.getReader();
-	const contentLength = Number(response.headers.get('content-length')) || 0;
-	const chunks = [];
-	let received = 0;
-
-	for (;;) {
-		const { done, value } = await reader.read();
-		if (done) break;
-		chunks.push(value);
-		received += value.byteLength;
-		if (contentLength > 0) {
-			rpcEmit(streamId, {
-				label,
-				loaded: received,
-				total: contentLength,
-			});
-		}
-	}
-
-	const buffer = new Uint8Array(received);
-	let offset = 0;
-	for (const chunk of chunks) {
-		buffer.set(chunk, offset);
-		offset += chunk.byteLength;
-	}
-	return buffer.buffer;
 }
 
 /** gzip 解压（DecompressionStream，Chrome 80+） */
@@ -184,7 +207,7 @@ async function sha256Hex(buffer) {
 
 /**
  * 下载并缓存一个模型文件（带 sha256 校验与进度推送）
- * @param {{direction: string, part: string, name: string, url: string, sha256: string, size: number, integrity?: boolean}} fileSpec
+ * @param {{direction: string, part: string, name: string, url: string, urls?: string[], mirrors?: string[], sha256: string}} fileSpec
  * @param {{streamId: string, force?: boolean}} options
  *   force: 忽略缓存命中，强制重新下载（用于「重新下载」；下载失败时旧缓存不被破坏）
  * @returns {Promise<ArrayBuffer>}
@@ -200,13 +223,13 @@ export async function ensureModelFile(fileSpec, { streamId, force = false }) {
 		// 缓存损坏或不匹配，重新下载
 	}
 
-	const integrity = fileSpec.integrity !== false ? fileSpec.sha256 : null;
+	// urls：主源 + 镜像（如魔搭）；单 URL 规格自动包一层数组
+	const urls =
+		Array.isArray(fileSpec.urls) && fileSpec.urls.length
+			? fileSpec.urls
+			: [fileSpec.url];
 	let buffer;
-	try {
-		buffer = await downloadFile(fileSpec.url, { streamId, label: fileSpec.name, integrity });
-	} catch (err) {
-		throw err;
-	}
+	buffer = await downloadFromUrls(urls, { streamId, label: fileSpec.name });
 
 
 	if (fileSpec.sha256) {
