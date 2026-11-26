@@ -84,6 +84,8 @@ function collectRanges(html, matcher) {
 		matchAll(pass.re, html, (m) => {
 			const start = m.index;
 			const end = m.index + m[0].length;
+			// 连字符邻接不算独立词（同 substituteHtml）
+			if ((start > 0 && html[start - 1] === '-') || html[end] === '-') return;
 			if (ranges.some((r) => start < r.end && end > r.start)) return;
 			const key = pass.ignoreCase ? m[0].toLowerCase() : m[0];
 			const idx = pass.idx.get(key);
@@ -110,7 +112,9 @@ export function substituteHtml(html, matcher) {
 			.split(/(<[^>]*>)/)
 			.map((part, i) => {
 				if (i % 2 === 1) return part; // 标签段
-				return part.replace(pass.re, (m) => {
+				return part.replace(pass.re, (m, offset, str) => {
+					// \b 把连字符当词边界：user-agent / -agent- 这类连字符邻接不算独立词
+					if ((offset > 0 && str[offset - 1] === '-') || str[offset + m.length] === '-') return m;
 					const key = pass.ignoreCase ? m.toLowerCase() : m;
 					const index = pass.idx.get(key);
 					return index === undefined ? m : tokenFor(index);
