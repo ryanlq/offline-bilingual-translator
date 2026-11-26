@@ -333,7 +333,7 @@ async function glossarySave(list) {
 
 rpcListen('glossary:list', async () => ({ entries: await glossaryLoad() }));
 
-rpcListen('glossary:add', async ({ source, target, pair = '', site = '' } = {}) => {
+rpcListen('glossary:add', async ({ source, target, pair = '', site = '', cs = false } = {}) => {
 	if (!source?.trim() || !target?.trim()) throw new Error('源词与译词不能为空');
 	const list = await glossaryLoad();
 	const s = source.trim();
@@ -344,6 +344,7 @@ rpcListen('glossary:add', async ({ source, target, pair = '', site = '' } = {}) 
 	const entry = {
 		id: `g${Date.now()}:${Math.random().toString(36).slice(2, 6)}`,
 		source: s, target: t, pair, site, createdAt: Date.now(),
+		...(cs ? { cs: true } : {}),
 	};
 	list.unshift(entry);
 	await glossarySave(list);
@@ -365,11 +366,13 @@ rpcListen('glossary:importCsv', async ({ csv, pair = '', site = '' } = {}) => {
 	const entries = parseCsv(csv);
 	const list = await glossaryLoad();
 	let added = 0;
-	for (const { source, target } of entries) {
-		if (list.find((e) => e.source === source && e.pair === pair && e.site === site)) continue;
+	for (const entry of entries) {
+		if (list.find((e) => e.source === entry.source && e.pair === pair && e.site === site)) continue;
 		list.unshift({
 			id: `g${Date.now()}:${Math.random().toString(36).slice(2, 6)}`,
-			source, target, pair, site, createdAt: Date.now(),
+			source: entry.source, target: entry.target, pair, site,
+			...(entry.cs ? { cs: true } : {}),
+			createdAt: Date.now(),
 		});
 		added++;
 	}
@@ -390,7 +393,7 @@ async function syncGlossary(from, to, siteOrigin) {
 	const site = siteOrigin ? siteOrigin.replace(/^https?:\/\//, '') : '';
 	const entries = list
 		.filter((e) => (!e.pair || e.pair === pair) && (!e.site || (site && e.site === site)))
-		.map((e) => ({ source: e.source, target: e.target }));
+		.map((e) => ({ source: e.source, target: e.target, ...(e.cs ? { cs: true } : {}) }));
 	const key = `${pair}|${site}`;
 	const sig = `${entries.length}:${list.length}`;
 	if (glossarySyncedAt && glossarySyncedAt.key === key && glossarySyncedAt.sig === sig) {

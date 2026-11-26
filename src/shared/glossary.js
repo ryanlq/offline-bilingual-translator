@@ -33,55 +33,101 @@ function isAsciiWord(s) {
 }
 
 /**
- * 构建匹配器
- * @param {{source: string, target: string}[]} terms
- * @returns {{re: RegExp, map: Map<string, string>}|null} 无术语时返回 null
+ * 构建匹配器（大小写敏感/不敏感双通道）
+ * @param {{source: string, target: string, cs?: boolean}[]} terms cs: 大小写敏感
+ *   （品牌名等有大小写歧义的词，如 Cursor 只命中大写开头，不影响小写 cursor/光标）
+ * @returns {{passCs: {re: RegExp, idx: Map<string,number>, ignoreCase: boolean}|null,
+ *            passCi: {re: RegExp, idx: Map<string,number>, ignoreCase: boolean}|null,
+ *            targets: string[]}|null}
  */
 export function buildMatcher(terms) {
 	if (!Array.isArray(terms) || terms.length === 0) return null;
 	const cleaned = terms
 		.filter((t) => t && typeof t.source === 'string' && typeof t.target === 'string' && t.source.trim() && t.target.trim())
-		.map((t) => ({ source: t.source.trim(), target: t.target.trim() }));
+		.map((t) => ({ source: t.source.trim(), target: t.target.trim(), cs: Boolean(t.cs) }));
 	if (!cleaned.length) return null;
 	// 长词优先（避免短词遮蔽长词的命中）
-	const sorted = [...cleaned].sort((a, b) => b.source.length - a.source.length);
-	const pattern = sorted
-		.map((t) => (isAsciiWord(t.source) ? `\\b${esc(t.source)}\\b` : esc(t.source)))
-		.join('|');
-	return {
-		re: new RegExp(pattern, 'gi'),
-		map: new Map(sorted.map((t) => [t.source.toLowerCase(), t.target])),
+	const byLen = (a, b) => b.source.length - a.source.length;
+	const csList = cleaned.filter((t) => t.cs).sort(byLen);
+	const ciList = cleaned.filter((t) => !t.cs).sort(byLen);
+	const targets = [];
+	const make = (list, ignoreCase) => {
+		if (!list.length) return null;
+		const re = new RegExp(
+			list.map((t) => (isAsciiWord(t.source) ? `\\b${esc(t.source)}\\b` : esc(t.source))).join('|'),
+			ignoreCase ? 'gi' : 'g',
+		);
+		const idx = new Map();
+		for (const t of list) {
+			idx.set(ignoreCase ? t.source.toLowerCase() : t.source, targets.length);
+			targets.push(t.target);
+		}
+		return { re, idx, ignoreCase };
 	};
+	return { passCs: make(csList, false), passCi: make(ciList, true), targets };
+}
+
+function matchAll(re, input, cb) {
+	const rx = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
+	let m;
+	while ((m = rx.exec(input)) !== null) {
+		cb(m);
+		if (m.index === rx.lastIndex) rx.lastIndex++;
+	}
+}
+
+/** 收集全部命中区间（cs 优先，重叠时丢弃 ci） */
+function collectRanges(html, matcher) {
+	const ranges = [];
+	for (const pass of [matcher.passCs, matcher.passCi]) {
+		if (!pass) continue;
+		matchAll(pass.re, html, (m) => {
+			const start = m.index;
+			const end = m.index + m[0].length;
+			if (ranges.some((r) => start < r.end && end > r.start)) return;
+			const key = pass.ignoreCase ? m[0].toLowerCase() : m[0];
+			const idx = pass.idx.get(key);
+			if (idx === undefined) return;
+			ranges.push({ start, end, idx });
+		});
+	}
+	ranges.sort((a, b) => a.start - b.start);
+	return ranges;
 }
 
 /**
- * HTML 感知替换：只替换标签外的文本部分
+ * HTML 感知替换：只替换标签外的文本部分（先大小写敏感通道，再不敏感通道）
  * @param {string} html
- * @param {{re: RegExp, map: Map<string,string>}} matcher
+ * @param {{passCs: object|null, passCi: object|null, targets: string[]}} matcher
  * @returns {string} 替换后的 html
  */
 export function substituteHtml(html, matcher) {
 	if (!matcher) return html;
-	return html
-		.split(/(<[^>]*>)/)
-		.map((part, i) => {
-			if (i % 2 === 1) return part; // 标签段
-			return part.replace(matcher.re, (m) => {
-				const index = [...matcher.map.keys()].indexOf(m.toLowerCase());
-				return tokenFor(index);
-			});
-		})
-		.join('');
+	let out = html;
+	for (const pass of [matcher.passCs, matcher.passCi]) {
+		if (!pass) continue;
+		out = out
+			.split(/(<[^>]*>)/)
+			.map((part, i) => {
+				if (i % 2 === 1) return part; // 标签段
+				return part.replace(pass.re, (m) => {
+					const key = pass.ignoreCase ? m.toLowerCase() : m;
+					const index = pass.idx.get(key);
+					return index === undefined ? m : tokenFor(index);
+				});
+			})
+			.join('');
+	}
+	return out;
 }
 
 /**
  * 回贴：token → 目标词。返回 {text, missing}，missing 为未恢复的 token 数
  * @param {string} text
- * @param {Map<string,string>} map（插入序即 token 序）
+ * @param {string[]} targets（token 序号 → 目标词）
  * @returns {{text: string, missing: number}}
  */
-export function restoreTokens(text, map) {
-	const targets = [...map.values()];
+export function restoreTokens(text, targets) {
 	let missing = 0;
 	const out = text.replace(tokenRegex(), (m, idx) => {
 		const target = targets[Number(idx)];
@@ -104,30 +150,22 @@ export function hasLeftoverTokens(text) {
  * 按术语把 HTML 切成交替段：[文本, 术语, 文本, 术语, ..., 文本]
  * （术语位置直接放目标词，文本段交由调用方翻译后原序拼接）
  * @param {string} html
- * @param {{re: RegExp, map: Map<string,string>}} matcher
+ * @param {object} matcher
  * @returns {{plain: string, term: string|null}[]}
  */
 export function splitByTerms(html, matcher) {
+	const ranges = collectRanges(html, matcher);
 	const parts = [];
 	let last = 0;
-	const input = html;
-	matchAll(matcher.re, input, (m) => {
-		if (m.index > last) parts.push({ plain: input.slice(last, m.index), term: null });
-		parts.push({ plain: '', term: matcher.map.get(m[0].toLowerCase()) });
-		last = m.index + m[0].length;
-	});
-	if (last < input.length) parts.push({ plain: input.slice(last), term: null });
+	for (const r of ranges) {
+		if (r.start > last) parts.push({ plain: html.slice(last, r.start), term: null });
+		parts.push({ plain: '', term: matcher.targets[r.idx] });
+		last = r.end;
+	}
+	if (last < html.length) parts.push({ plain: html.slice(last), term: null });
 	return parts.length ? parts : [{ plain: html, term: null }];
 }
 
-function matchAll(re, input, cb) {
-	const rx = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
-	let m;
-	while ((m = rx.exec(input)) !== null) {
-		cb(m);
-		if (m.index === rx.lastIndex) rx.lastIndex++;
-	}
-}
 
 /**
  * CSV 解析（source,target 每行一条；支持引号包裹）
@@ -159,7 +197,9 @@ export function parseCsv(csv) {
 		}
 		cells.push(cur);
 		if (cells.length >= 2 && cells[0].trim() && cells[1].trim()) {
-			out.push({ source: cells[0].trim(), target: cells[1].trim() });
+			const entry = { source: cells[0].trim(), target: cells[1].trim() };
+			if (cells.length >= 3) entry.cs = /^(1|true|y|yes)$/i.test(cells[2].trim());
+			out.push(entry);
 		}
 	}
 	return out;
@@ -168,5 +208,7 @@ export function parseCsv(csv) {
 /** 序列化为 CSV */
 export function toCsv(entries) {
 	const cell = (s) => (/[",\n\t]/.test(s) ? `"${String(s).replace(/"/g, '""')}"` : String(s));
-	return entries.map((e) => `${cell(e.source)},${cell(e.target)}`).join('\n');
+	return entries
+		.map((e) => [cell(e.source), cell(e.target), ...(e.cs ? ['1'] : [])].join(','))
+		.join('\n');
 }

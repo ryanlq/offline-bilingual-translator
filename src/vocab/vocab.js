@@ -456,7 +456,11 @@ function renderGlossary() {
 
 		const meta = document.createElement('span');
 		meta.className = 'gl-meta';
-		meta.textContent = [entry.pair || '全部方向', entry.site || '全部站点'].join(' · ');
+		meta.textContent = [
+			entry.pair || '全部方向',
+			entry.site || '全部站点',
+			entry.cs ? '区分大小写' : '',
+		].filter(Boolean).join(' · ');
 		row.appendChild(meta);
 
 		const del = document.createElement('button');
@@ -486,6 +490,7 @@ function wireGlossary() {
 			target,
 			pair: $('gl-pair').value.replace('_', ''),
 			site: $('gl-site').value.trim(),
+			cs: $('gl-cs').checked,
 		});
 		glFlash(res.added ? '已添加 ✓' : '已存在，未重复添加');
 		if (res.added) {

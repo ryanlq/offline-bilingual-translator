@@ -350,7 +350,7 @@ rpcListen('engine:translate', async ({ texts, direction, models, html = false, g
 			// 「出现的 token 回贴失败」与「token 被引擎整体吞掉」都视为缺失 → 降级。
 			const sent = (texts[i].match(tokenRegex()) || []).length;
 			const inOutput = (results[i].target.text.match(tokenRegex()) || []).length;
-			const restored = restoreTokens(results[i].target.text, matcher.map);
+			const restored = restoreTokens(results[i].target.text, matcher.targets);
 			if (sent > 0 && inOutput === sent && restored.missing === 0) {
 				results[i].target.text = tidyCjkSpaces(restored.text);
 				continue;

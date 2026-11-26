@@ -1,0 +1,11 @@
+﻿source,target
+agent,智能体
+prompt,提示词
+hallucination,幻觉
+embedding,嵌入
+inference,推理
+multimodal,多模态
+guardrails,护栏
+distillation,蒸馏
+quantization,量化
+benchmark,基准测试
