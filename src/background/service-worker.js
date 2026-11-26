@@ -23,6 +23,7 @@ import {
 	ensureModelFile,
 	deleteModel,
 } from './model-store.js';
+import { parseCsv, toCsv } from '../shared/glossary.js';
 
 const OFFSCREEN_URL = 'src/offscreen/offscreen.html';
 
@@ -272,12 +273,19 @@ async function ensurePathLoaded(path, { streamId, force = false } = {}) {
 	}
 }
 
-/** 翻译一批文本（直连不可用时自动走英语中转） */
-async function translateTexts(texts, from, to, { streamId, html = false } = {}) {
+/** 翻译一批文本（直连不可用时自动走英语中转）
+ *  siteOrigin: 页面来源站点（术语表按站点过滤；扩展页调用方经 payload 传入） */
+async function translateTexts(texts, from, to, { streamId, html = false, siteOrigin = null } = {}) {
 	if (!Array.isArray(texts) || texts.length === 0) return [];
 
 	const path = await resolveTranslationPath(from, to);
 	await ensurePathLoaded(path, { streamId });
+
+	// 术语表同步（失败不阻断翻译，仅术语不生效）
+	let glossaryVersion = 0;
+	await syncGlossary(from, to, siteOrigin)
+		.then((v) => { glossaryVersion = v; })
+		.catch(() => {});
 
 	const run = () =>
 		rpcCall('engine:translate', {
@@ -285,6 +293,7 @@ async function translateTexts(texts, from, to, { streamId, html = false } = {}) 
 			direction: { from, to },
 			models: path.models,
 			html,
+			glossaryVersion,
 		}).then((results) => results.map((r) => r.target.text));
 
 	try {
@@ -301,11 +310,107 @@ async function translateTexts(texts, from, to, { streamId, html = false } = {}) 
 	}
 }
 
+
+/* ---------------- 术语表（数据 + 推送） ---------------- */
+
+const GLOSSARY_KEY = 'glossary';
+let glossaryCache = null;
+/** offscreen 已同步状态：{ key, sig, version }（内容变更或引擎重启后重推） */
+let glossarySyncedAt = null;
+
+async function glossaryLoad() {
+	if (glossaryCache) return glossaryCache;
+	const { [GLOSSARY_KEY]: saved } = await chrome.storage.local.get(GLOSSARY_KEY);
+	glossaryCache = Array.isArray(saved) ? saved : [];
+	return glossaryCache;
+}
+
+async function glossarySave(list) {
+	glossaryCache = list;
+	glossarySyncedAt = null; // 内容变更：引擎侧需重新同步
+	await chrome.storage.local.set({ [GLOSSARY_KEY]: list });
+}
+
+rpcListen('glossary:list', async () => ({ entries: await glossaryLoad() }));
+
+rpcListen('glossary:add', async ({ source, target, pair = '', site = '' } = {}) => {
+	if (!source?.trim() || !target?.trim()) throw new Error('源词与译词不能为空');
+	const list = await glossaryLoad();
+	const s = source.trim();
+	const t = target.trim();
+	if (list.find((e) => e.source === s && e.pair === pair && e.site === site)) {
+		return { added: false, reason: 'duplicate' };
+	}
+	const entry = {
+		id: `g${Date.now()}:${Math.random().toString(36).slice(2, 6)}`,
+		source: s, target: t, pair, site, createdAt: Date.now(),
+	};
+	list.unshift(entry);
+	await glossarySave(list);
+	return { added: true, id: entry.id };
+});
+
+rpcListen('glossary:delete', async ({ id } = {}) => {
+	const list = await glossaryLoad();
+	await glossarySave(list.filter((e) => e.id !== id));
+	return true;
+});
+
+rpcListen('glossary:clear', async () => {
+	await glossarySave([]);
+	return true;
+});
+
+rpcListen('glossary:importCsv', async ({ csv, pair = '', site = '' } = {}) => {
+	const entries = parseCsv(csv);
+	const list = await glossaryLoad();
+	let added = 0;
+	for (const { source, target } of entries) {
+		if (list.find((e) => e.source === source && e.pair === pair && e.site === site)) continue;
+		list.unshift({
+			id: `g${Date.now()}:${Math.random().toString(36).slice(2, 6)}`,
+			source, target, pair, site, createdAt: Date.now(),
+		});
+		added++;
+	}
+	await glossarySave(list);
+	return { added, total: entries.length };
+});
+
+rpcListen('glossary:exportCsv', async ({ pair = '', site = '' } = {}) => {
+	const list = await glossaryLoad();
+	const filtered = list.filter((e) => (!pair || e.pair === pair) && (!site || e.site === site));
+	return { csv: toCsv(filtered) };
+});
+
+/** 推送当前方向+站点的术语至引擎上下文（版本号防陈旧；引擎重启/内容变更都会触发重推） */
+async function syncGlossary(from, to, siteOrigin) {
+	const list = await glossaryLoad();
+	const pair = `${from}${to}`;
+	const site = siteOrigin ? siteOrigin.replace(/^https?:\/\//, '') : '';
+	const entries = list
+		.filter((e) => (!e.pair || e.pair === pair) && (!e.site || (site && e.site === site)))
+		.map((e) => ({ source: e.source, target: e.target }));
+	const key = `${pair}|${site}`;
+	const sig = `${entries.length}:${list.length}`;
+	if (glossarySyncedAt && glossarySyncedAt.key === key && glossarySyncedAt.sig === sig) {
+		return glossarySyncedAt.version;
+	}
+	const { version } = await rpcCall('glossary:set', { entries });
+	glossarySyncedAt = { key, sig, version };
+	return version;
+}
+
 /* ---------------- RPC：翻译 ---------------- */
 
-rpcListen('translate:texts', ({ texts, from, to, streamId, html }) =>
-	translateTexts(texts, from, to, { streamId, html }),
-);
+rpcListen('translate:texts', (payload, sender) => {
+	const tabOrigin = sender.tab?.url ? new URL(sender.tab.url).origin : null;
+	return translateTexts(payload.texts, payload.from, payload.to, {
+		streamId: payload.streamId,
+		html: payload.html,
+		siteOrigin: payload.siteOrigin ?? tabOrigin ?? null,
+	});
+});
 
 /** 预热：popup 打开即后台装配当前方向模型，点「翻译」时通常已就绪 */
 rpcListen('models:warmup', async ({ direction } = {}) => {

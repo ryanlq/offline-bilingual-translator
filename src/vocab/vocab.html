@@ -52,6 +52,32 @@
 		</div>
 	</section>
 
+	<section class="anki card">
+		<h2>术语表 <span id="glossary-status" class="status"></span></h2>
+		<p class="hint">
+			术语强制生效：翻译时命中的源词会按你的译法输出。方向留空表示对所有语言对生效。
+			支持 CSV 导入导出（每行 <code>源词,译词</code>）。
+		</p>
+		<div class="grid">
+			<label>源词<input id="gl-source" type="text" placeholder="如 cloud servers" /></label>
+			<label>译词<input id="gl-target" type="text" placeholder="如 云服务器" /></label>
+			<label>方向<select id="gl-pair">
+				<option value="">全部</option>
+				<option value="enzh">英→中</option>
+				<option value="zh_en">中→英</option>
+			</select></label>
+			<label>站点（可选）<input id="gl-site" type="text" placeholder="如 docs.example.com" /></label>
+		</div>
+		<div class="anki-actions">
+			<button id="gl-add" class="btn primary">添加术语</button>
+			<button id="gl-import" class="btn secondary">导入 CSV</button>
+			<button id="gl-export" class="btn secondary">导出 CSV</button>
+			<button id="gl-clear" class="btn danger">清空</button>
+			<span id="gl-result" class="hint"></span>
+		</div>
+		<div id="gl-list" class="gl-list"></div>
+	</section>
+
 	<section class="list-area">
 		<input id="search" type="search" placeholder="搜索原文 / 译文 / 来源标题…" />
 		<div id="vocab-list"></div>

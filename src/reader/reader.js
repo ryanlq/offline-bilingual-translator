@@ -253,6 +253,7 @@ async function flush() {
 						from: state.direction.from,
 						to: state.direction.to,
 						html: true,
+						siteOrigin: state.sourceUrl ? new URL(state.sourceUrl).origin : undefined,
 					});
 					slice.forEach(({ s }, index) => {
 						s.text = translations[index] ?? '';
@@ -534,6 +535,7 @@ function wireVocabSave() {
 							from: state.direction.from,
 							to: state.direction.to,
 							html: false,
+							siteOrigin: state.sourceUrl ? new URL(state.sourceUrl).origin : undefined,
 						});
 						await saveVocab(text, translation ?? '', null);
 					} catch (err) {

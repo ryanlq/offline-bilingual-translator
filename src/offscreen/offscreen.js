@@ -13,6 +13,7 @@
 import { rpcListen, rpcEmit } from '../shared/rpc.js';
 
 import './tts-engine.js'; // TTS 发音包通道（tts-engine:status/synthesize/voices，下载在 SW 侧）
+import { buildMatcher, substituteHtml, restoreTokens, splitByTerms, tokenRegex } from '../shared/glossary.js';
 import { DEFAULT_OCR_LANG_PATH } from '../shared/models-registry.js';
 import { ensureModelFile } from '../background/model-store.js';
 
@@ -202,6 +203,16 @@ async function ensureEngine() {
 
 /* ---------------- 翻译 RPC ---------------- */
 
+/* ---------------- 术语表（后台翻译前推送，引擎内强制） ---------------- */
+
+/** @type {{version: number, entries: {source: string, target: string}[]}} */
+let glossaryState = { version: 0, entries: [] };
+
+rpcListen('glossary:set', ({ entries }) => {
+	glossaryState = { version: glossaryState.version + 1, entries: entries ?? [] };
+	return { version: glossaryState.version };
+});
+
 rpcListen('engine:ensureModel', async ({ direction, pairKey, fileSpecs, streamId, force, config }) => {
 	const instance = await ensureEngine();
 
@@ -286,7 +297,7 @@ function tidyCjkPunctuation(text) {
 	return t;
 }
 
-rpcListen('engine:translate', async ({ texts, direction, models, html = false }) => {
+rpcListen('engine:translate', async ({ texts, direction, models, html = false, glossaryVersion = 0 }) => {
 	const instance = await ensureEngine();
 	const modelList = models?.length ? models : [direction];
 
@@ -299,10 +310,20 @@ rpcListen('engine:translate', async ({ texts, direction, models, html = false })
 		}
 	}
 
-	// LRU 缓存命中（键含路径与模式：pivot 产物与直连产物区分开）
+	// 术语表：仅当版本与当前状态一致时应用（SW 会在推送后传同版本号）
+	const glossaryActive = glossaryVersion > 0 && glossaryVersion === glossaryState.version;
+	const matcher = glossaryActive ? buildMatcher(glossaryState.entries) : null;
+	const originalTexts = texts;
+
+	// 命中术语：占位符替换（tag-aware，只动标签外文本）
+	if (matcher) {
+		texts = texts.map((t) => substituteHtml(t, matcher));
+	}
+
+	// LRU 缓存命中（键含路径/模式/术语版本：术语变更后旧缓存不命中）
 	const pathId = modelList.map((m) => `${m.from}${m.to}`).join('+');
 	const cacheKeys = texts.map(
-		(text) => `${pathId}|${html ? 'h' : 't'}|${text}`,
+		(text) => `${pathId}|${html ? 'h' : 't'}|g${glossaryVersion}|${text}`,
 	);
 	const cached = cacheKeys.map((k) => translationCache.get(k));
 	if (cached.every((v) => v !== undefined)) {
@@ -319,6 +340,52 @@ rpcListen('engine:translate', async ({ texts, direction, models, html = false })
 		// html:true 时 texts 已是受限内联片段（页面侧已白名单化），引擎只保留标签结构
 		texts: texts.map((text) => ({ text, html })),
 	});
+
+	// 术语回贴：token → 目标词；回贴缺失（NMT 吞改 token）的句子降级为
+	// 分段拼接——按术语切分，纯文本段去标签后翻译，术语位置直接插目标词。
+	// （降级损失的只是该句的内联格式与跨段流畅度，术语正确性优先）
+	if (matcher) {
+		for (let i = 0; i < results.length; i++) {
+			// 哨兵计数：送入 N 个 token，译文必须原样出现 N 个。
+			// 「出现的 token 回贴失败」与「token 被引擎整体吞掉」都视为缺失 → 降级。
+			const sent = (texts[i].match(tokenRegex()) || []).length;
+			const inOutput = (results[i].target.text.match(tokenRegex()) || []).length;
+			const restored = restoreTokens(results[i].target.text, matcher.map);
+			if (sent > 0 && inOutput === sent && restored.missing === 0) {
+				results[i].target.text = restored.text;
+				continue;
+			}
+			const parts = splitByTerms(originalTexts[i], matcher);
+			const plainParts = parts
+				.filter((p) => !p.term)
+				.map((p) => p.plain.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim())
+				.filter((t) => t);
+			try {
+				const sub = instance.translate({
+					models: modelList,
+					texts: plainParts.map((t) => ({ text: t, html: false })),
+				});
+				const translated = plainParts.map((t, k) => {
+					void t;
+					return sub[k]?.target.text ?? '';
+				});
+				let joined = '';
+				let pi = 0;
+				for (const part of parts) {
+					if (part.term) joined += part.term;
+					else {
+						const piece = translated[pi] ?? '';
+						pi++;
+						joined += piece;
+					}
+				}
+				results[i].target.text = joined;
+			} catch {
+				// 分段降级也失败：至少把 token 还原为可读占位（目标词由调用侧兜底不可行，保留原样）
+				results[i].target.text = restored.text;
+			}
+		}
+	}
 
 	// 写缓存：命中项保留原值，未命中项整理后写入；超限淘汰最旧
 	const finalTo = modelList[modelList.length - 1].to;

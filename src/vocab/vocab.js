@@ -84,6 +84,20 @@ function renderList() {
 		}
 		texts.appendChild(meta);
 
+		const toTerm = document.createElement('button');
+		toTerm.className = 'del';
+		toTerm.title = '加入术语表（翻译时强制按此译法）';
+		toTerm.textContent = '词';
+		toTerm.addEventListener('click', async () => {
+			const res = await rpcCall('glossary:add', {
+				source: entry.source,
+				target: entry.translation || '',
+				pair: entry.pair || '',
+			});
+			flash(res.added ? '已加入术语表 ✓' : '术语表已有该词');
+			renderGlossary();
+		});
+
 		const del = document.createElement('button');
 		del.className = 'del';
 		del.title = '删除';
@@ -95,6 +109,7 @@ function renderList() {
 		});
 
 		row.appendChild(texts);
+		row.appendChild(toTerm);
 		row.appendChild(del);
 		container.appendChild(row);
 	}
@@ -372,6 +387,7 @@ function wire() {
 		renderList();
 	});
 	$('anki-refresh').addEventListener('click', connectAnki);
+	wireGlossary();
 	$('anki-template').addEventListener('click', createObtTemplate);
 
 	$('anki-push').addEventListener('click', pushToAnki);
@@ -392,5 +408,121 @@ function wire() {
 	renderList();
 	wireTts();
 	refreshTts();
+	refreshGlossary();
 	connectAnki();
 })();
+
+
+/* ---------------- 术语表 ---------------- */
+
+let glossaryEntries = [];
+
+function glFlash(text) {
+	const el = $('gl-result');
+	el.textContent = text;
+	setTimeout(() => {
+		if (el.textContent === text) el.textContent = '';
+	}, 2500);
+}
+
+async function refreshGlossary() {
+	const { entries } = await rpcCall('glossary:list');
+	glossaryEntries = entries ?? [];
+	$('glossary-status').textContent = `${glossaryEntries.length} 条`;
+	renderGlossary();
+}
+
+function renderGlossary() {
+	const list = $('gl-list');
+	list.textContent = '';
+	for (const entry of glossaryEntries) {
+		const row = document.createElement('div');
+		row.className = 'gl-row';
+
+		const src = document.createElement('span');
+		src.className = 'gl-src';
+		src.textContent = entry.source;
+		row.appendChild(src);
+
+		const arrow = document.createElement('span');
+		arrow.className = 'gl-arrow';
+		arrow.textContent = '→';
+		row.appendChild(arrow);
+
+		const dst = document.createElement('span');
+		dst.className = 'gl-dst';
+		dst.textContent = entry.target;
+		row.appendChild(dst);
+
+		const meta = document.createElement('span');
+		meta.className = 'gl-meta';
+		meta.textContent = [entry.pair || '全部方向', entry.site || '全部站点'].join(' · ');
+		row.appendChild(meta);
+
+		const del = document.createElement('button');
+		del.className = 'del';
+		del.title = '删除';
+		del.textContent = '✕';
+		del.addEventListener('click', async () => {
+			await rpcCall('glossary:delete', { id: entry.id });
+			await refreshGlossary();
+		});
+		row.appendChild(del);
+
+		list.appendChild(row);
+	}
+}
+
+function wireGlossary() {
+	$('gl-add').addEventListener('click', async () => {
+		const source = $('gl-source').value.trim();
+		const target = $('gl-target').value.trim();
+		if (!source || !target) {
+			glFlash('源词与译词不能为空');
+			return;
+		}
+		const res = await rpcCall('glossary:add', {
+			source,
+			target,
+			pair: $('gl-pair').value.replace('_', ''),
+			site: $('gl-site').value.trim(),
+		});
+		glFlash(res.added ? '已添加 ✓' : '已存在，未重复添加');
+		if (res.added) {
+			$('gl-source').value = '';
+			$('gl-target').value = '';
+			await refreshGlossary();
+		}
+	});
+	$('gl-import').addEventListener('click', () => {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.csv,.txt';
+		input.addEventListener('change', async () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			const csv = await file.text();
+			const site = $('gl-site').value.trim();
+			const pair = $('gl-pair').value.replace('_', '');
+			const res = await rpcCall('glossary:importCsv', { csv, pair, site });
+			glFlash(`导入 ${res.added}/${res.total} 条`);
+			await refreshGlossary();
+		});
+		input.click();
+	});
+	$('gl-export').addEventListener('click', async () => {
+		const { csv } = await rpcCall('glossary:exportCsv', {});
+		const blob = new Blob(['\ufeff' + csv], { type: 'text/csv' });
+		const a = document.createElement('a');
+		a.href = URL.createObjectURL(blob);
+		a.download = `glossary-${new Date().toISOString().slice(0, 10)}.csv`;
+		a.click();
+		URL.revokeObjectURL(a.href);
+	});
+	$('gl-clear').addEventListener('click', async () => {
+		if (!glossaryEntries.length) return;
+		if (!confirm(`确定清空全部 ${glossaryEntries.length} 条术语？此操作不可撤销。`)) return;
+		await rpcCall('glossary:clear');
+		await refreshGlossary();
+	});
+}
