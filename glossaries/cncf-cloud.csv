@@ -1,0 +1,69 @@
+﻿source,target
+Abstraction,抽象
+Agile Software Development,敏捷软件开发
+API Gateway,API 网关
+Application Programming Interface (API),应用程序接口 (API)
+Autoscaling,自动伸缩
+Bare Metal Machine,裸机
+Blue Green Deployment,蓝绿部署
+Canary Deployment,金丝雀部署
+Chaos Engineering,混沌工程
+Client-Server Architecture,主从式架构
+Cloud Computing,云计算
+Cloud Native Apps,云原生应用程序
+Cloud Native Security,云原生安全
+Cloud Native Technology,云原生技术
+Cluster,集群
+Container Image,容器镜像
+Container Orchestration,容器编排
+Containers,容器
+Containerization,容器化
+Containers as a Service,容器即服务 (CaaS)
+Continuous Delivery (CD),持续交付 (CD)
+Continuous Deployment (CD),持续部署 (CD)
+Continuous integration (CI),持续集成 (CI)
+Datacenter,数据中心
+Database as a Service (DBaaS),数据库即服务 (DBaaS)
+Debugging,调试
+DevOps,开发运维 (DevOps)
+Distributed Apps,分布式应用
+Distributed System,分布式系统
+Edge Computing,边缘计算
+Event-Driven Architecture,事件驱动架构
+Firewall,防火墙
+Horizontal Scaling,水平伸缩
+Idempotence,幂等性
+Immutable Infrastructure,不可变基础设施
+Infrastructure as a Service (IaaS),基础设施即服务 (IaaS)
+Infrastructure as Code (IaC),基础设施即代码 (IaC)
+Kubernetes,Kubernetes
+Load Balancer,负载均衡器
+Loosely Coupled Architecture,松耦合架构
+Managed services,托管服务
+Monolithic Apps,单体应用
+Multitenancy,多租户模式
+Mutual Transport Layer Security (mTLS),双向传输层安全性协议（mTLS）
+Nodes,节点
+Observability,可观测性
+Platform as a Service (PaaS),平台即服务 (PaaS)
+Pod,Pod
+Policy as Code (PaC),策略即代码 (PaC)
+Portability,可移植性
+Reliability,可靠性
+Scalability,可伸缩性
+Search Results,Search Results
+Security Chaos Engineering,安全混沌工程
+Self Healing,自愈
+Service Discovery,服务发现
+Service Mesh,服务网格
+Service Proxy,服务代理
+Service,服务
+Shift Left,左移 (Shift Left)
+Site Reliability Engineering,网站可靠性工程（SRE)
+Stateful Apps,有状态应用
+Transport Layer Security (TLS),传输层安全性协议（TLS)
+Version Control,版本控制
+Vertical Scaling,垂直伸缩
+Virtual Machine,虚拟机
+Virtualization,虚拟化
+Zero Trust Architecture,零信任架构

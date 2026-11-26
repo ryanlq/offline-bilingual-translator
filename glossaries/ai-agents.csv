@@ -1,0 +1,66 @@
+﻿source,target
+AI agent,AI 智能体
+agent,智能体
+agentic coding,智能体编程
+agentic,智能体式
+tool use,工具调用
+tool calling,工具调用
+function calling,函数调用
+prompt,提示词
+system prompt,系统提示词
+prompt engineering,提示词工程
+context window,上下文窗口
+large language model,大语言模型
+retrieval-augmented generation,检索增强生成
+RAG,RAG
+hallucination,幻觉
+fine-tuning,微调
+fine-tune,微调
+embedding,嵌入
+vector database,向量数据库
+inference,推理
+reasoning model,推理模型
+chain of thought,思维链
+reinforcement learning,强化学习
+RLHF,基于人类反馈的强化学习
+multimodal,多模态
+guardrails,护栏
+model context protocol,模型上下文协议
+MCP,MCP
+Token,Token
+open weights,开放权重
+distillation,蒸馏
+quantization,量化
+on-device AI,端侧 AI
+benchmark,基准测试
+vibe coding,氛围编程
+codebase,代码库
+Cursor,Cursor
+Claude,Claude
+Claude Code,Claude Code
+Anthropic,Anthropic
+OpenAI,OpenAI
+Codex,Codex
+Copilot,Copilot
+GitHub Copilot,GitHub Copilot
+Gemini,Gemini
+Devin,Devin
+Windsurf,Windsurf
+Aider,Aider
+Cline,Cline
+LangChain,LangChain
+LlamaIndex,LlamaIndex
+Ollama,Ollama
+Hugging Face,Hugging Face
+OpenRouter,OpenRouter
+DeepSeek,DeepSeek
+Qwen,Qwen
+Kimi,Kimi
+GLM,GLM
+Mistral,Mistral
+Perplexity,Perplexity
+Grok,Grok
+vLLM,vLLM
+llama.cpp,llama.cpp
+LM Studio,LM Studio
+Zed,Zed

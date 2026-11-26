@@ -1,0 +1,232 @@
+﻿source,target
+Abstraction,抽象
+Agile Software Development,敏捷软件开发
+API Gateway,API 网关
+Application Programming Interface (API),应用程序接口 (API)
+Autoscaling,自动伸缩
+Bare Metal Machine,裸机
+Blue Green Deployment,蓝绿部署
+Canary Deployment,金丝雀部署
+Chaos Engineering,混沌工程
+Client-Server Architecture,主从式架构
+Cloud Computing,云计算
+Cloud Native Apps,云原生应用程序
+Cloud Native Security,云原生安全
+Cloud Native Technology,云原生技术
+Cluster,集群
+Container Image,容器镜像
+Container Orchestration,容器编排
+Containers,容器
+Containerization,容器化
+Containers as a Service,容器即服务 (CaaS)
+Continuous Delivery (CD),持续交付 (CD)
+Continuous Deployment (CD),持续部署 (CD)
+Continuous integration (CI),持续集成 (CI)
+Datacenter,数据中心
+Database as a Service (DBaaS),数据库即服务 (DBaaS)
+Debugging,调试
+DevOps,开发运维 (DevOps)
+Distributed Apps,分布式应用
+Distributed System,分布式系统
+Edge Computing,边缘计算
+Event-Driven Architecture,事件驱动架构
+Firewall,防火墙
+Horizontal Scaling,水平伸缩
+Idempotence,幂等性
+Immutable Infrastructure,不可变基础设施
+Infrastructure as a Service (IaaS),基础设施即服务 (IaaS)
+Infrastructure as Code (IaC),基础设施即代码 (IaC)
+Kubernetes,Kubernetes
+Load Balancer,负载均衡器
+Loosely Coupled Architecture,松耦合架构
+Managed services,托管服务
+Monolithic Apps,单体应用
+Multitenancy,多租户模式
+Mutual Transport Layer Security (mTLS),双向传输层安全性协议（mTLS）
+Nodes,节点
+Observability,可观测性
+Platform as a Service (PaaS),平台即服务 (PaaS)
+Pod,Pod
+Policy as Code (PaC),策略即代码 (PaC)
+Portability,可移植性
+Reliability,可靠性
+Scalability,可伸缩性
+Search Results,Search Results
+Security Chaos Engineering,安全混沌工程
+Self Healing,自愈
+Service Discovery,服务发现
+Service Mesh,服务网格
+Service Proxy,服务代理
+Service,服务
+Shift Left,左移 (Shift Left)
+Site Reliability Engineering,网站可靠性工程（SRE)
+Stateful Apps,有状态应用
+Transport Layer Security (TLS),传输层安全性协议（TLS)
+Version Control,版本控制
+Vertical Scaling,垂直伸缩
+Virtual Machine,虚拟机
+Virtualization,虚拟化
+Zero Trust Architecture,零信任架构
+Add-ons,附加组件（Add-ons）
+Admission Controller,准入控制器（Admission Controller）
+Affinity,亲和性（Affinity）
+Aggregation Layer,聚合层（Aggregation Layer）
+Annotation,注解（Annotation）
+API-initiated eviction,API 发起的驱逐（API-initiated eviction）
+API Group,API Group (API 组)
+API resource,API 资源
+App Container,应用容器（App Container）
+Application Architect,应用架构师（Application Architect）
+Application Developer,应用开发者（Application Developer）
+Applications,应用（Application）
+Approver,批准者（Approver）
+cAdvisor,cAdvisor
+Container Device Interface (CDI),容器设备接口（CDI）
+Common Expression Language,通用表达式语言（CEL）
+Certificate,证书（Certificate）
+cgroup (control group),控制组（cgroup；control group）
+CIDR,CIDR
+CLA (Contributor License Agreement),贡献者许可协议（CLA；Contributor License Agreement）
+Cloud Controller Manager,云控制器管理器（Cloud Controller Manager）
+Cloud Provider,云提供商（Cloud Provider）
+Cluster Architect,集群架构师（Cluster Architect）
+Cluster Infrastructure,集群基础设施（Cluster Infrastructure）
+Cluster Operations,集群操作（Cluster Operations）
+Cluster Operator,集群操作者（Cluster Operator）
+Cluster,集群（Cluster）
+Cloud Native Computing Foundation (CNCF),云原生计算基金会（CNCF；Cloud Native Computing Foundation）
+Container network interface (CNI),容器网络接口（Container network interface；CNI）
+Code Contributor,代码贡献者（Code Contributor）
+Condition,状况（Condition）
+ConfigMap,ConfigMap
+Container Environment Variables,容器环境变量（Container Environment Variables）
+Container Lifecycle Hooks,容器生命周期钩子（Container Lifecycle Hooks）
+Container Runtime,容器运行时（Container Runtime）
+Container,容器（Container）
+containerd,containerd
+Contributor,贡献者（Contributor）
+Control Plane,控制平面（Control Plane）
+Controller,控制器（Controller）
+CRI-O,CRI-O
+Container Runtime Interface (CRI),容器运行时接口（Container Runtime Interface；CRI）
+CronJob,周期调度任务（CronJob）
+Container Storage Interface (CSI),容器存储接口（Container Storage Interface；CSI）
+CustomResourceDefinition,CustomResourceDefinition
+DaemonSet,DaemonSet
+Data Plane,数据平面（Data Plane）
+Deployment,Deployment
+Developer (disambiguation),开发者（Developer）
+Device Plugin,设备插件（Device Plugin）
+Device,设备
+DeviceClass,DeviceClass
+Disruption,干扰（Disruption）
+Docker,Docker
+Dockershim,Dockershim
+Downstream (disambiguation),下游（Downstream）
+Downward API,Downward API
+Dynamic Resource Allocation,动态资源分配
+Drain,腾空
+Duration,Duration
+Dynamic Volume Provisioning,动态卷制备（Dynamic Volume Provisioning）
+EndpointSlice,EndpointSlice
+Endpoints,端点（Endpoints）
+Ephemeral Container,临时容器（Ephemeral Container）
+etcd,etcd
+Event,事件（Event）
+Eviction,驱逐（Eviction）
+Extensions,扩展组件（Extension）
+Feature gate,特性门控（Feature gate）
+Finalizer,Finalizer
+FlexVolume,FlexVolume
+Garbage Collection,垃圾收集（Garbage Collection）
+Gateway API,Gateway API
+Group Version Resource,组版本资源（Group Version Resource）
+Helm Chart,Helm Chart
+Horizontal Pod Autoscaler,Pod 水平自动扩缩器
+HostAliases,HostAliases
+Image,镜像（Image）
+Immutable Infrastructure,不可变基础设施
+Glossary,词汇表
+Resource (infrastructure),资源（基础设施）
+Ingress,Ingress
+Init Container,Init 容器（Init Container）
+Istio,Istio
+Job,Job
+JSON Web Token (JWT),JSON Web 令牌 (JWT)
+kOps (Kubernetes Operations),kOps (Kubernetes Operations)
+API server,API 服务器
+kube-controller-manager,kube-controller-manager
+kube-proxy,kube-proxy
+kube-scheduler,kube-scheduler
+Kubeadm,Kubeadm
+Kubectl,Kubectl
+Kubelet,Kubelet
+Kubernetes API,Kubernetes API
+Label,标签（Label）
+LimitRange,LimitRange
+Logging,日志（Logging）
+Managed Service,托管服务
+Manifest,清单（Manifest）
+Master,Master
+Member,成员（Member）
+Minikube,Minikube
+Mirror Pod,镜像 Pod（Mirror Pod）
+Mixed Version Proxy (MVP),混合版本代理
+Name,名称（Name）
+Namespace,名字空间（Namespace）
+Network Policy,网络策略
+Node-pressure eviction,节点压力驱逐
+Node,节点（Node）
+Object,对象（Object）
+Operator pattern,Operator 模式
+Persistent Volume Claim,持久卷申领（Persistent Volume Claim）
+Persistent Volume,持久卷（Persistent Volume）
+Platform Developer,平台开发人员（Platform Developer）
+Pod Disruption Budget,Pod 干扰预算（PDB）
+Pod Disruption,Pod 干扰
+Pod Lifecycle,Pod 生命周期
+Pod Priority,Pod 优先级
+Pod Security Policy,Pod 安全策略
+PodTemplate,PodTemplate
+Pod,Pod
+PodGroup,PodGroup
+Preemption,抢占（Preemption）
+PriorityClass,PriorityClass
+Probe,探针（Probe）
+Proxy,代理（Proxy）
+QoS Class,QoS 类（QoS Class）
+Quantity,量纲（Quantity）
+RBAC (Role-Based Access Control),基于角色的访问控制（RBAC）
+ReplicaSet,ReplicaSet
+Replica,副本（Replica）
+ReplicationController,副本控制器（ReplicationController）
+ResourceQuota,资源配额（ResourceQuota）
+ResourceClaim,ResourceClaim
+ResourceClaimTemplate,ResourceClaimTemplate
+ResourceSlice,ResourceSlice
+Reviewer,评审者（Reviewer）
+Subject Alternative Name,主题备用名称（Subject Alternative Name）
+Secret,Secret
+Security Context,安全上下文（Security Context）
+Selector,选择算符（Selector）
+ServiceAccount,ServiceAccount
+Service Catalog,服务目录（Service Catalog）
+Service,服务（Service）
+Shuffle-sharding,混排切片（Shuffle Sharding）
+Sidecar Container,边车容器
+SIG (special interest group),特别兴趣小组（SIG）
+Spec,规约（Spec）
+StatefulSet,StatefulSet
+Static Pod,静态 Pod（Static Pod）
+Storage Class,StorageClass
+sysctl,sysctl
+Taint,污点（Taint）
+Toleration,容忍度（Toleration）
+UID,UID
+Upstream (disambiguation),上游（Uptream）
+user namespace,用户名字空间
+Volume Plugin,卷插件（Volume Plugin）
+Volume,卷（Volume）
+Watch,监视（Watch）
+WG (working group),工作组（Working Group，WG）
+Workload,工作负载（Workload）

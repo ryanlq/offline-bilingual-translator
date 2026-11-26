@@ -352,7 +352,7 @@ rpcListen('engine:translate', async ({ texts, direction, models, html = false, g
 			const inOutput = (results[i].target.text.match(tokenRegex()) || []).length;
 			const restored = restoreTokens(results[i].target.text, matcher.map);
 			if (sent > 0 && inOutput === sent && restored.missing === 0) {
-				results[i].target.text = restored.text;
+				results[i].target.text = tidyCjkSpaces(restored.text);
 				continue;
 			}
 			const parts = splitByTerms(originalTexts[i], matcher);
@@ -379,7 +379,7 @@ rpcListen('engine:translate', async ({ texts, direction, models, html = false, g
 						joined += piece;
 					}
 				}
-				results[i].target.text = joined;
+				results[i].target.text = tidyCjkSpaces(joined);
 			} catch {
 				// 分段降级也失败：至少把 token 还原为可读占位（目标词由调用侧兜底不可行，保留原样）
 				results[i].target.text = restored.text;
@@ -405,6 +405,11 @@ rpcListen('engine:translate', async ({ texts, direction, models, html = false, g
 	}
 	return results;
 });
+
+/** 术语回贴后的汉字间空格清理（回贴 token 时会带入空格） */
+function tidyCjkSpaces(text) {
+	return text.replace(/([\u4e00-\u9fff\u3040-\u30ff])[ ]+([\u4e00-\u9fff\u3040-\u30ff])/g, '$1$2');
+}
 
 rpcListen('engine:freeModel', async ({ direction }) => {
 	if (!engine) return;
