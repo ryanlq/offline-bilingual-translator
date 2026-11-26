@@ -63,8 +63,28 @@
 			const frag = selection.getRangeAt(0).cloneContents();
 			const div = document.createElement('div');
 			div.appendChild(frag);
+
+			// 空白规范化：行内连续空格折一个；换行及其前后空白折成单个换行。
+			// pre-wrap 会原样保留源码缩进空白，不折叠会导致块间出现大段空行。
+			const normalize = (root) => {
+				for (const node of [...root.childNodes]) {
+					if (node.nodeType === Node.TEXT_NODE) {
+						node.nodeValue = node.nodeValue
+							.replace(/[ \t\f\r]+/g, ' ')
+							.replace(/ *\n\s*/g, '\n');
+					} else if (node.nodeType === Node.ELEMENT_NODE) {
+						if (node.tagName === 'BR') {
+							node.replaceWith(document.createTextNode('\n'));
+						} else {
+							normalize(node);
+						}
+					}
+				}
+			};
+			normalize(div);
+
 			// 块级元素剥壳后多段文本会粘成一行（源 HTML 块间常无空白节点）：
-			// 在每个块级子树后补换行，<br> 也转成换行，配合 pre-wrap 保留多行结构
+			// 在每个块级子树后补换行；随后再折叠一次（补的换行与既有换行相邻时合并）
 			const BLOCKS = new Set([
 				'P', 'DIV', 'LI', 'UL', 'OL', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
 				'BLOCKQUOTE', 'PRE', 'TABLE', 'TR', 'SECTION', 'ARTICLE', 'FIGURE', 'FIGCAPTION', 'DT', 'DD',
@@ -74,14 +94,21 @@
 					if (BLOCKS.has(el.tagName)) {
 						markBlocks(el);
 						el.after(document.createTextNode('\n'));
-					} else if (el.tagName === 'BR') {
-						el.replaceWith(document.createTextNode('\n'));
 					} else {
 						markBlocks(el);
 					}
 				}
 			};
 			markBlocks(div);
+			normalize(div);
+
+			// 去掉整体首尾空白
+			while (div.firstChild && div.firstChild.nodeType === Node.TEXT_NODE && !div.firstChild.nodeValue.trim()) {
+				div.removeChild(div.firstChild);
+			}
+			while (div.lastChild && div.lastChild.nodeType === Node.TEXT_NODE && !div.lastChild.nodeValue.trim()) {
+				div.removeChild(div.lastChild);
+			}
 			const html = div.innerHTML;
 			return /<[a-z][^>]*>/i.test(html) ? html : null;
 		}
@@ -129,9 +156,10 @@
 
 			// 富文本：选区内联格式经净化后进原文栏；无标签时走纯文本零开销路径
 			const selHtml = this.selectionHtml();
-			const originalHtml = selHtml ? OBT.sanitizeTranslationHtml(selHtml) : null;
+			// 原文栏内容：有内联标签用净化后的富文本；纯文本选区直接用文本（不能留空）
+			const originalContent = selHtml ? OBT.sanitizeTranslationHtml(selHtml) : text;
 			const stacked = text.length < STACKED_MAX && !text.includes('\n');
-			this.showLoading(x, y, originalHtml, stacked);
+			this.showLoading(x, y, originalContent, stacked);
 
 			try {
 				const [translated] = await OBT.rpcCall('translate:texts', {
@@ -140,7 +168,7 @@
 					to: direction.to,
 					html: Boolean(selHtml),
 				});
-				this.showResult(originalHtml, translated ?? '', x, y, stacked);
+				this.showResult(originalContent, translated ?? '', x, y, stacked);
 			} catch (err) {
 				// html 模式异常（罕见）：退回纯文本重试一次
 				if (selHtml) {
@@ -150,14 +178,14 @@
 							from: direction.from,
 							to: direction.to,
 						});
-						this.showResult(null, translated ?? '', x, y, stacked);
+						this.showResult(text, translated ?? '', x, y, stacked);
 						return;
 					} catch (err2) {
-						this.showResult(null, `⚠ ${err2.message}`, x, y, stacked);
+						this.showResult(text, `⚠ ${err2.message}`, x, y, stacked);
 						return;
 					}
 				}
-				this.showResult(null, `⚠ ${err.message}`, x, y, stacked);
+				this.showResult(text, `⚠ ${err.message}`, x, y, stacked);
 			}
 		}
 
