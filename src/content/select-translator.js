@@ -109,7 +109,8 @@
 			while (div.lastChild && div.lastChild.nodeType === Node.TEXT_NODE && !div.lastChild.nodeValue.trim()) {
 				div.removeChild(div.lastChild);
 			}
-			const html = div.innerHTML;
+			// 兜底：连续换行硬折叠为单个（块边界的补行 + 源码换行叠加时）
+			const html = div.innerHTML.replace(/\n[ \t]*\n+/g, '\n');
 			return /<[a-z][^>]*>/i.test(html) ? html : null;
 		}
 
@@ -135,6 +136,9 @@
 			);
 
 			const detected = OBT.detectTextLang(text);
+			// 明确检测到不支持翻译的源语言（如日语/韩语，内置引擎无对应语言包）：
+			// 无论自动还是菜单触发都不弹窗，避免「原文译文同为日文」的无效结果
+			if (detected === 'ja' || detected === 'ko') return;
 			// 启发式语言判定只覆盖中/英源语言；其它语言（法/德/俄/乌等）
 			// 不做方向拦截，否则选中的外文会被误判成「非源语言」而永不弹窗
 			const canGateByLang = direction.from === 'zh' || direction.from === 'en';
