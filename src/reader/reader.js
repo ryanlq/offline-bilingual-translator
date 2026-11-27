@@ -9,7 +9,7 @@
  */
 
 import { rpcCall } from '../shared/rpc.js';
-import { getSettings } from '../shared/settings.js';
+import { getSettings, saveSettings } from '../shared/settings.js';
 import { splitSentences } from '../shared/sentences.js';
 import { detectTextLang } from '../shared/detect-lang.js';
 
@@ -307,7 +307,7 @@ async function flush() {
 
 /* ---------------- 工具栏 ---------------- */
 
-function wireToolbar() {
+async function wireToolbar() {
 	// 返回原文：阅读标签通过 openerTabId 记录了来源页（tabs.getCurrent 在扩展页不可靠）。
 	// 激活原标签后关闭自己；会话恢复等场景找不到来源时至少关闭自己。
 	document.getElementById('back').addEventListener('click', async () => {
@@ -342,9 +342,14 @@ function wireToolbar() {
 			}
 			for (const b of document.querySelectorAll('.style-btn'))
 				b.classList.toggle('active', b === btn);
+			// 排版偏好持久化：下次打开沿用
+			saveSettings({ readerStyle: btn.dataset.style }).catch(() => {});
 		});
 	}
-	document.querySelector('.style-btn[data-style="interleave"]').classList.add('active');
+	const savedStyle = (await getSettings()).readerStyle || 'columns';
+	const styleBtn = document.querySelector(`.style-btn[data-style="${savedStyle}"]`) || document.querySelector('.style-btn[data-style="columns"]');
+	document.body.dataset.style = styleBtn.dataset.style;
+	styleBtn.classList.add('active');
 
 	const applyFont = (delta) => {
 		const css = getComputedStyle(document.documentElement).getPropertyValue('--reader-font-size') || '18px';

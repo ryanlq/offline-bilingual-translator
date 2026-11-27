@@ -10,6 +10,8 @@ const DEFAULT_SETTINGS = {
 	hoverHighlight: true,
 	translateDirection: 'auto',
 	selectTranslateEnabled: true, // 划词翻译开关
+	selectTheme: 'light', // 划词弹窗主题（light/dark/sepia）
+	readerStyle: 'columns', // 阅读模式默认排版（逐句/交替/双栏）
 	excludeSelectors: [],
 	ocrLangs: 'eng',
 	ocrFrom: 'en',

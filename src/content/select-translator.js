@@ -11,9 +11,6 @@
 
 	const OBT = self.OBT;
 
-	/** 短于此长度的选区用上下堆叠布局（单词/短语左右分栏浪费空间） */
-	const STACKED_MAX = 80;
-
 	class SelectTranslator {
 		constructor() {
 			this.settings = null;
@@ -171,8 +168,7 @@
 			const selHtml = this.selectionHtml();
 			// 原文栏内容：有内联标签用净化后的富文本；纯文本选区直接用文本（不能留空）
 			const originalContent = selHtml ? OBT.sanitizeTranslationHtml(selHtml) : text;
-			const stacked = text.length < STACKED_MAX && !text.includes('\n');
-			this.showLoading(x, y, originalContent, stacked);
+			this.showLoading(x, y, originalContent);
 
 			try {
 				const [translated] = await OBT.rpcCall('translate:texts', {
@@ -181,7 +177,7 @@
 					to: direction.to,
 					html: Boolean(selHtml),
 				});
-				this.showResult(originalContent, translated ?? '', x, y, stacked);
+				this.showResult(originalContent, translated ?? '', x, y);
 			} catch (err) {
 				// html 模式异常（罕见）：退回纯文本重试一次
 				if (selHtml) {
@@ -191,14 +187,14 @@
 							from: direction.from,
 							to: direction.to,
 						});
-						this.showResult(text, translated ?? '', x, y, stacked);
+						this.showResult(text, translated ?? '', x, y);
 						return;
 					} catch (err2) {
-						this.showResult(text, `⚠ ${err2.message}`, x, y, stacked);
+						this.showResult(text, `⚠ ${err2.message}`, x, y);
 						return;
 					}
 				}
-				this.showResult(text, `⚠ ${err.message}`, x, y, stacked);
+				this.showResult(text, `⚠ ${err.message}`, x, y);
 			}
 		}
 
@@ -212,50 +208,69 @@
 				<style>
 					:host { all: initial; }
 					.popup {
+						--sp-bg: #ffffff;
+						--sp-border: #dadce0;
+						--sp-orig: #3c4043;
+						--sp-tran: #1a73e8;
+						--sp-label: #9aa0a6;
 						position: absolute;
 						z-index: 2147483646;
-						width: min(680px, calc(100vw - 24px));
-						background: #ffffff;
-						border: 1px solid #dadce0;
+						width: min(80vw, 1200px);
+						background: var(--sp-bg);
+						border: 1px solid var(--sp-border);
 						border-radius: 10px;
 						box-shadow: 0 6px 24px rgba(0,0,0,0.18);
-						font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+						font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+							"Microsoft YaHei", "微软雅黑", sans-serif;
 						color: #202124;
 					}
+					.popup[data-theme='dark'] {
+						--sp-bg: #1f2126;
+						--sp-border: #3c4043;
+						--sp-orig: #d7dce5;
+						--sp-tran: #8ab4f8;
+						--sp-label: #8a93a3;
+						color: #d7dce5;
+					}
+					.popup[data-theme='sepia'] {
+						--sp-bg: #f8f1e3;
+						--sp-border: #d9c9a8;
+						--sp-orig: #5b4a36;
+						--sp-tran: #9a6b1f;
+						--sp-label: #a08c6a;
+					}
 					.panes { display: flex; align-items: stretch; }
-					.panes.stacked { flex-direction: column; }
 					.pane { flex: 1 1 0; min-width: 0; padding: 10px 14px 12px; overflow: auto; max-height: 340px; }
-					/* column 方向下 flex-basis:0 会把栏高压成 0（overflow:auto 使自动最小高度失效），改为内容自适应 */
-					.panes.stacked .pane { flex: 0 0 auto; max-height: 170px; }
-					.panes:not(.stacked) .pane + .pane { border-left: 1px solid #e8eaed; }
-					.panes.stacked .pane + .pane { border-top: 1px solid #e8eaed; }
+					.pane + .pane { border-left: 1px solid var(--sp-border); }
 					.label {
 						font-size: 11px;
-						color: #9aa0a6;
+						color: var(--sp-label);
 						margin-bottom: 6px;
 						letter-spacing: 0.08em;
 						user-select: none;
 					}
-					.content { line-height: 1.7; overflow-wrap: break-word; white-space: pre-wrap; }
-					.original .content { color: #3c4043; font-size: 13px; }
-					.translation .content { color: #1a73e8; font-size: 14px; }
+					.content { line-height: 1.75; overflow-wrap: break-word; white-space: pre-wrap; letter-spacing: 0.015em; }
+					.original .content { color: var(--sp-orig); font-size: 13px; }
+					.translation .content { color: var(--sp-tran); font-size: 14px; }
 					.content a { color: inherit; text-decoration: underline; }
 					.content b, .content strong { font-weight: 600; }
-					.close {
+					.close, .theme {
 						position: absolute;
 						top: 8px;
-						right: 10px;
 						cursor: pointer;
-						color: #9aa0a6;
+						color: var(--sp-label);
 						border: none;
 						background: none;
 						font-size: 14px;
 						padding: 2px 4px;
 						line-height: 1;
 					}
-					.close:hover { color: #5f6368; }
+					.close { right: 10px; }
+					.theme { right: 34px; font-size: 13px; }
+					.close:hover, .theme:hover { color: #5f6368; }
 				</style>
 				<div class="popup" role="dialog">
+					<button class="theme" title="切换主题（浅色/暗色/护眼）">◐</button>
 					<button class="close" title="关闭">✕</button>
 					<div class="panes">
 						<div class="pane original">
@@ -275,6 +290,16 @@
 			this.originalContent = this.shadowRoot.querySelector('.original .content');
 			this.translationContent = this.shadowRoot.querySelector('.translation .content');
 			this.shadowRoot.querySelector('.close').addEventListener('click', () => this.hide());
+			// 主题：从设置读取；弹窗内 ◐ 按钮循环切换并保存
+			this.popup.dataset.theme = ['dark', 'sepia'].includes(this.settings?.selectTheme) ? this.settings.selectTheme : 'light';
+			this.shadowRoot.querySelector('.theme').addEventListener('click', () => {
+				const order = ['light', 'dark', 'sepia'];
+				const next = order[(order.indexOf(this.popup.dataset.theme) + 1) % order.length];
+				this.popup.dataset.theme = next;
+				OBT.saveSettings({ selectTheme: next }).then(() => {
+					this.settings = { ...this.settings, selectTheme: next };
+				});
+			});
 
 			document.documentElement.appendChild(this.container);
 
@@ -299,26 +324,25 @@
 			}
 		}
 
-		showLoading(x, y, originalHtml, stacked) {
+		/** 应用主题（浅色/暗色/护眼） */
+		applyTheme(theme) {
 			this.ensureContainer();
-			this._fill(this.originalContent, originalHtml ?? '');
+			this.popup.dataset.theme = ['dark', 'sepia'].includes(theme) ? theme : 'light';
+		}
+
+		showLoading(x, y, originalContent) {
+			this.ensureContainer();
+			this.applyTheme(this.settings?.selectTheme ?? 'light');
+			this._fill(this.originalContent, originalContent ?? '');
 			this.translationContent.textContent = '翻译中…';
-			this.setLayout(stacked);
 			this.place(x, y);
 		}
 
-		showResult(originalHtml, translation, x, y, stacked) {
+		showResult(originalHtml, translation, x, y) {
 			this.ensureContainer();
 			this._fill(this.originalContent, originalHtml ?? '');
-			// 引擎返回的是受限 HTML（html 模式保留标签结构）：过白名单净化后按富文本渲染
 			this._fill(this.translationContent, OBT.sanitizeTranslationHtml(String(translation ?? '')));
-			this.setLayout(stacked);
 			this.place(x, y);
-		}
-
-		/** 布局：短选区上下堆叠，长选区左右对照 */
-		setLayout(stacked) {
-			this.panes.classList.toggle('stacked', Boolean(stacked));
 		}
 
 		/** 定位：水平钳制在视口内，垂直保证弹窗完整可见 */

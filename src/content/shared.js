@@ -17,6 +17,7 @@
 		inlineFormat: true, // 译文保留粗体/斜体/链接等内联格式（引擎 html 模式）
 		translateDirection: 'auto', // auto: 根据页面语言选择方向
 		selectTranslateEnabled: true, // 划词翻译开关
+		selectTheme: 'light', // 划词弹窗主题（light/dark/sepia）
 		excludeSelectors: [],
 		ocrLangs: 'eng',
 		ocrFrom: 'en',

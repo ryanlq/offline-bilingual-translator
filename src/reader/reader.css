@@ -308,3 +308,8 @@ body[data-theme="sepia"] .blk-pre {
 	background: rgba(112, 66, 20, 0.08);
 	border-color: rgba(112, 66, 20, 0.25);
 }
+
+/* 双栏模式：内容区放宽到视口 80%（默认 42rem 对双栏过窄） */
+body[data-style='columns'] .content {
+	max-width: min(80vw, 1600px);
+}
