@@ -144,10 +144,10 @@
 		return out;
 	}
 
-	/** 降级路径：叶子块收集（collectParagraphs）+ 内联片段 */
-	function harvestFallback() {
+	/** 降级路径：叶子块收集（collectParagraphs）+ 内联片段；rootDoc: 在干净克隆文档上收集（避开翻译宿主标记） */
+	function harvestFallback(rootDoc) {
 		if (typeof OBT.collectParagraphs !== 'function') return []; // text-collector 未注入时降级不可用
-		const paragraphs = OBT.collectParagraphs({});
+		const paragraphs = OBT.collectParagraphs({ rootDoc: rootDoc || null });
 		return paragraphs.map(({ element }) => {
 			const tag = element.tagName.toLowerCase();
 			const html = OBT.__collectHtml(element);
@@ -189,10 +189,10 @@
 		}
 
 		if (blocks.length < 3) {
-			// 降级：叶子块收集（收集器基于 live DOM，无法访问克隆文档里的 shadow root 差异可忽略）
+			// 降级：叶子块收集（在干净克隆文档上收集，避开已翻译标记与译文宿主）
 			method = 'fallback';
 			try {
-				blocks = harvestFallback();
+				blocks = harvestFallback(doc);
 			} catch {
 				blocks = [];
 			}
@@ -209,7 +209,7 @@
 		if (srcHeadings >= 6 && headingBlocks <= 2) {
 			method = 'fallback';
 			try {
-				blocks = harvestFallback();
+				blocks = harvestFallback(doc);
 			} catch {
 				// 回退失败：保留 Readability 产物（退化但可用）
 			}

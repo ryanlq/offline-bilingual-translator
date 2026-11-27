@@ -152,12 +152,13 @@
 
 	/**
 	 * 收集页面可翻译段落
-	 * @param {{excludeSelectors?: string[], minLength?: number, roots?: Element[]|null}} options
+	 * @param {{excludeSelectors?: string[], minLength?: number, roots?: Element[]|null, rootDoc?: Document|null}} options
 	 *   roots: 增量模式——只从这些变化子树找（MutationObserver 用）；缺省时全文档扫描。
+	 *   rootDoc: 在指定文档（如阅读模式用的干净克隆文档）上收集，缺省当前文档。
 	 * @returns {{element: Element, text: string}[]}
 	 */
 	OBT.collectParagraphs = function (options = {}) {
-		const { excludeSelectors = [], minLength = 4, roots = null } = options;
+		const { excludeSelectors = [], minLength = 4, roots = null, rootDoc = null } = options;
 		const results = [];
 
 		const consider = (element) => {
@@ -206,8 +207,9 @@
 		if (roots && roots.length) {
 			// 增量模式：变化子树自身按元素逻辑处理（可能本身是叶子或容器）
 			for (const root of roots) handleElement(root);
-		} else if (document.body) {
-			walk(document.body);
+		} else {
+			const bodyEl = rootDoc ? rootDoc.body : document.body;
+			if (bodyEl) walk(bodyEl);
 		}
 
 		return results;

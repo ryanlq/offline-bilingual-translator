@@ -1,0 +1,358 @@
+﻿source,target,cs
+.add(),.add(),1
+.addBack(),.addBack(),1
+.addClass(),.addClass(),1
+.after(),.after(),1
+ajaxComplete event,ajaxComplete event,1
+.ajaxComplete(),.ajaxComplete(),1
+ajaxError event,ajaxError event,1
+.ajaxError(),.ajaxError(),1
+ajaxSend event,ajaxSend event,1
+.ajaxSend(),.ajaxSend(),1
+ajaxStart event,ajaxStart event,1
+.ajaxStart(),.ajaxStart(),1
+ajaxStop event,ajaxStop event,1
+.ajaxStop(),.ajaxStop(),1
+ajaxSuccess event,ajaxSuccess event,1
+.ajaxSuccess(),.ajaxSuccess(),1
+All Selector (&#8220;*&#8221;),All Selector (&#8220;*&#8221;),1
+.andSelf(),.andSelf(),1
+.animate(),.animate(),1
+:animated Selector,:animated Selector,1
+.append(),.append(),1
+.appendTo(),.appendTo(),1
+.attr(),.attr(),1
+.before(),.before(),1
+.bind(),.bind(),1
+blur event,blur event,1
+.blur(),.blur(),1
+:button Selector,:button Selector,1
+callbacks.add(),callbacks.add(),1
+callbacks.disable(),callbacks.disable(),1
+callbacks.disabled(),callbacks.disabled(),1
+callbacks.empty(),callbacks.empty(),1
+callbacks.fire(),callbacks.fire(),1
+callbacks.fired(),callbacks.fired(),1
+callbacks.fireWith(),callbacks.fireWith(),1
+callbacks.has(),callbacks.has(),1
+callbacks.lock(),callbacks.lock(),1
+callbacks.locked(),callbacks.locked(),1
+callbacks.remove(),callbacks.remove(),1
+change event,change event,1
+.change(),.change(),1
+:checkbox Selector,:checkbox Selector,1
+:checked Selector,:checked Selector,1
+.children(),.children(),1
+Class Selector (&#8220;.class&#8221;),Class Selector (&#8220;.class&#8221;),1
+.clearQueue(),.clearQueue(),1
+click event,click event,1
+.click(),.click(),1
+.clone(),.clone(),1
+.closest(),.closest(),1
+:contains() Selector,:contains() Selector,1
+.contents(),.contents(),1
+.context,.context,1
+contextmenu event,contextmenu event,1
+.contextmenu(),.contextmenu(),1
+.css(),.css(),1
+.data(),.data(),1
+dblclick event,dblclick event,1
+.dblclick(),.dblclick(),1
+deferred.always(),deferred.always(),1
+deferred.catch(),deferred.catch(),1
+deferred.done(),deferred.done(),1
+deferred.fail(),deferred.fail(),1
+deferred.isRejected(),deferred.isRejected(),1
+deferred.isResolved(),deferred.isResolved(),1
+deferred.notify(),deferred.notify(),1
+deferred.notifyWith(),deferred.notifyWith(),1
+deferred.pipe(),deferred.pipe(),1
+deferred.progress(),deferred.progress(),1
+deferred.promise(),deferred.promise(),1
+deferred.reject(),deferred.reject(),1
+deferred.rejectWith(),deferred.rejectWith(),1
+deferred.resolve(),deferred.resolve(),1
+deferred.resolveWith(),deferred.resolveWith(),1
+deferred.state(),deferred.state(),1
+deferred.then(),deferred.then(),1
+.delay(),.delay(),1
+.delegate(),.delegate(),1
+.dequeue(),.dequeue(),1
+.detach(),.detach(),1
+.die(),.die(),1
+:disabled Selector,:disabled Selector,1
+.each(),.each(),1
+Element Selector (&#8220;element&#8221;),Element Selector (&#8220;element&#8221;),1
+.empty(),.empty(),1
+:empty Selector,:empty Selector,1
+:enabled Selector,:enabled Selector,1
+.end(),.end(),1
+.eq(),.eq(),1
+:eq() Selector,:eq() Selector,1
+error event,error event,1
+.error(),.error(),1
+.even(),.even(),1
+:even Selector,:even Selector,1
+event.currentTarget,event.currentTarget,1
+event.data,event.data,1
+event.delegateTarget,event.delegateTarget,1
+event.isDefaultPrevented(),event.isDefaultPrevented(),1
+event.isImmediatePropagationStopped(),event.isImmediatePropagationStopped(),1
+event.isPropagationStopped(),event.isPropagationStopped(),1
+event.metaKey,event.metaKey,1
+event.namespace,event.namespace,1
+event.pageX,event.pageX,1
+event.pageY,event.pageY,1
+event.preventDefault(),event.preventDefault(),1
+event.relatedTarget,event.relatedTarget,1
+event.result,event.result,1
+event.stopImmediatePropagation(),event.stopImmediatePropagation(),1
+event.stopPropagation(),event.stopPropagation(),1
+event.target,event.target,1
+event.timeStamp,event.timeStamp,1
+event.type,event.type,1
+event.which,event.which,1
+.fadeIn(),.fadeIn(),1
+.fadeOut(),.fadeOut(),1
+.fadeTo(),.fadeTo(),1
+.fadeToggle(),.fadeToggle(),1
+:file Selector,:file Selector,1
+.filter(),.filter(),1
+.find(),.find(),1
+.finish(),.finish(),1
+.first(),.first(),1
+:first-child Selector,:first-child Selector,1
+:first-of-type Selector,:first-of-type Selector,1
+:first Selector,:first Selector,1
+focus event,focus event,1
+:focus Selector,:focus Selector,1
+.focus(),.focus(),1
+focusin event,focusin event,1
+.focusin(),.focusin(),1
+focusout event,focusout event,1
+.focusout(),.focusout(),1
+.get(),.get(),1
+:gt() Selector,:gt() Selector,1
+.has(),.has(),1
+Has Attribute Selector [name],Has Attribute Selector [name],1
+:has() Selector,:has() Selector,1
+.hasClass(),.hasClass(),1
+:header Selector,:header Selector,1
+.height(),.height(),1
+:hidden Selector,:hidden Selector,1
+.hide(),.hide(),1
+.hover(),.hover(),1
+.html(),.html(),1
+ID Selector (&#8220;#id&#8221;),ID Selector (&#8220;#id&#8221;),1
+:image Selector,:image Selector,1
+.index(),.index(),1
+.innerHeight(),.innerHeight(),1
+.innerWidth(),.innerWidth(),1
+:input Selector,:input Selector,1
+.insertAfter(),.insertAfter(),1
+.insertBefore(),.insertBefore(),1
+.is(),.is(),1
+jQuery(),jQuery(),1
+.jquery,.jquery,1
+jQuery.ajax(),jQuery.ajax(),1
+jQuery.ajaxPrefilter(),jQuery.ajaxPrefilter(),1
+jQuery.ajaxSetup(),jQuery.ajaxSetup(),1
+jQuery.ajaxTransport(),jQuery.ajaxTransport(),1
+jQuery.boxModel,jQuery.boxModel,1
+jQuery.browser,jQuery.browser,1
+jQuery.Callbacks(),jQuery.Callbacks(),1
+jQuery.contains(),jQuery.contains(),1
+jQuery.cssHooks,jQuery.cssHooks,1
+jQuery.cssNumber,jQuery.cssNumber,1
+jQuery.data(),jQuery.data(),1
+jQuery.Deferred(),jQuery.Deferred(),1
+jQuery.Deferred.exceptionHook(),jQuery.Deferred.exceptionHook(),1
+jQuery.Deferred.getErrorHook(),jQuery.Deferred.getErrorHook(),1
+jQuery.Deferred.getStackHook(),jQuery.Deferred.getStackHook(),1
+jQuery.dequeue(),jQuery.dequeue(),1
+jQuery.each(),jQuery.each(),1
+jQuery.error(),jQuery.error(),1
+jQuery.escapeSelector(),jQuery.escapeSelector(),1
+jQuery.extend(),jQuery.extend(),1
+jQuery.find(),jQuery.find(),1
+jQuery.fn.extend(),jQuery.fn.extend(),1
+jQuery.fx.interval,jQuery.fx.interval,1
+jQuery.fx.off,jQuery.fx.off,1
+jQuery.get(),jQuery.get(),1
+jQuery.getJSON(),jQuery.getJSON(),1
+jQuery.getScript(),jQuery.getScript(),1
+jQuery.globalEval(),jQuery.globalEval(),1
+jQuery.grep(),jQuery.grep(),1
+jQuery.hasData(),jQuery.hasData(),1
+jQuery.holdReady(),jQuery.holdReady(),1
+jQuery.htmlPrefilter(),jQuery.htmlPrefilter(),1
+jQuery.inArray(),jQuery.inArray(),1
+jQuery.isArray(),jQuery.isArray(),1
+jQuery.isEmptyObject(),jQuery.isEmptyObject(),1
+jQuery.isFunction(),jQuery.isFunction(),1
+jQuery.isNumeric(),jQuery.isNumeric(),1
+jQuery.isPlainObject(),jQuery.isPlainObject(),1
+jQuery.isWindow(),jQuery.isWindow(),1
+jQuery.isXMLDoc(),jQuery.isXMLDoc(),1
+jQuery.makeArray(),jQuery.makeArray(),1
+jQuery.map(),jQuery.map(),1
+jQuery.merge(),jQuery.merge(),1
+jQuery.noConflict(),jQuery.noConflict(),1
+jQuery.noop(),jQuery.noop(),1
+jQuery.now(),jQuery.now(),1
+jQuery.param(),jQuery.param(),1
+jQuery.parseHTML(),jQuery.parseHTML(),1
+jQuery.parseJSON(),jQuery.parseJSON(),1
+jQuery.parseXML(),jQuery.parseXML(),1
+jQuery.post(),jQuery.post(),1
+jQuery.proxy(),jQuery.proxy(),1
+jQuery.queue(),jQuery.queue(),1
+jQuery.ready,jQuery.ready,1
+jQuery.readyException(),jQuery.readyException(),1
+jQuery.removeData(),jQuery.removeData(),1
+jQuery.speed,jQuery.speed,1
+jQuery.sub(),jQuery.sub(),1
+jQuery.support,jQuery.support,1
+jQuery.trim(),jQuery.trim(),1
+jQuery.type(),jQuery.type(),1
+jQuery.unique(),jQuery.unique(),1
+jQuery.uniqueSort(),jQuery.uniqueSort(),1
+jQuery.when(),jQuery.when(),1
+keydown event,keydown event,1
+.keydown(),.keydown(),1
+keypress event,keypress event,1
+.keypress(),.keypress(),1
+keyup event,keyup event,1
+.keyup(),.keyup(),1
+:lang() Selector,:lang() Selector,1
+.last(),.last(),1
+:last-child Selector,:last-child Selector,1
+:last-of-type Selector,:last-of-type Selector,1
+:last Selector,:last Selector,1
+.length,.length,1
+.live(),.live(),1
+.load(),.load(),1
+load event,load event,1
+:lt() Selector,:lt() Selector,1
+.map(),.map(),1
+mousedown event,mousedown event,1
+.mousedown(),.mousedown(),1
+mouseenter event,mouseenter event,1
+.mouseenter(),.mouseenter(),1
+mouseleave event,mouseleave event,1
+.mouseleave(),.mouseleave(),1
+mousemove event,mousemove event,1
+.mousemove(),.mousemove(),1
+mouseout event,mouseout event,1
+.mouseout(),.mouseout(),1
+mouseover event,mouseover event,1
+.mouseover(),.mouseover(),1
+mouseup event,mouseup event,1
+.mouseup(),.mouseup(),1
+.next(),.next(),1
+.nextAll(),.nextAll(),1
+.nextUntil(),.nextUntil(),1
+.not(),.not(),1
+:not() Selector,:not() Selector,1
+:nth-child() Selector,:nth-child() Selector,1
+:nth-last-child() Selector,:nth-last-child() Selector,1
+:nth-last-of-type() Selector,:nth-last-of-type() Selector,1
+:nth-of-type() Selector,:nth-of-type() Selector,1
+.odd(),.odd(),1
+:odd Selector,:odd Selector,1
+.off(),.off(),1
+.offset(),.offset(),1
+.offsetParent(),.offsetParent(),1
+.on(),.on(),1
+.one(),.one(),1
+:only-child Selector,:only-child Selector,1
+:only-of-type Selector,:only-of-type Selector,1
+.outerHeight(),.outerHeight(),1
+.outerWidth(),.outerWidth(),1
+.parent(),.parent(),1
+:parent Selector,:parent Selector,1
+.parents(),.parents(),1
+.parentsUntil(),.parentsUntil(),1
+:password Selector,:password Selector,1
+.position(),.position(),1
+.prepend(),.prepend(),1
+.prependTo(),.prependTo(),1
+.prev(),.prev(),1
+.prevAll(),.prevAll(),1
+.prevUntil(),.prevUntil(),1
+.promise(),.promise(),1
+.prop(),.prop(),1
+.pushStack(),.pushStack(),1
+.queue(),.queue(),1
+:radio Selector,:radio Selector,1
+.ready(),.ready(),1
+.remove(),.remove(),1
+.removeAttr(),.removeAttr(),1
+.removeClass(),.removeClass(),1
+.removeData(),.removeData(),1
+.removeProp(),.removeProp(),1
+.replaceAll(),.replaceAll(),1
+.replaceWith(),.replaceWith(),1
+:reset Selector,:reset Selector,1
+resize event,resize event,1
+.resize(),.resize(),1
+:root Selector,:root Selector,1
+scroll event,scroll event,1
+.scroll(),.scroll(),1
+.scrollLeft(),.scrollLeft(),1
+.scrollTop(),.scrollTop(),1
+select event,select event,1
+.select(),.select(),1
+:selected Selector,:selected Selector,1
+.selector,.selector,1
+.serialize(),.serialize(),1
+.serializeArray(),.serializeArray(),1
+.show(),.show(),1
+.siblings(),.siblings(),1
+.size(),.size(),1
+.slice(),.slice(),1
+.slideDown(),.slideDown(),1
+.slideToggle(),.slideToggle(),1
+.slideUp(),.slideUp(),1
+.stop(),.stop(),1
+submit event,submit event,1
+:submit Selector,:submit Selector,1
+.submit(),.submit(),1
+:target Selector,:target Selector,1
+.text(),.text(),1
+:text Selector,:text Selector,1
+.toArray(),.toArray(),1
+.toggle(),.toggle(),1
+.toggleClass(),.toggleClass(),1
+.trigger(),.trigger(),1
+.triggerHandler(),.triggerHandler(),1
+.unbind(),.unbind(),1
+.undelegate(),.undelegate(),1
+.uniqueSort(),.uniqueSort(),1
+unload event,unload event,1
+.unload(),.unload(),1
+.unwrap(),.unwrap(),1
+.val(),.val(),1
+:visible Selector,:visible Selector,1
+.width(),.width(),1
+.wrap(),.wrap(),1
+.wrapAll(),.wrapAll(),1
+.wrapInner(),.wrapInner(),1
+Ajax,Ajax,1
+DOM,DOM,1
+JSON,JSON,1
+XML,XML,1
+XHR,XHR,1
+HTTP,HTTP,1
+HTTPS,HTTPS,1
+URL,URL,1
+CSS,CSS,1
+API,API,1
+SVG,SVG,1
+CORS,CORS,1
+promise,promise,1
+deferred,deferred,1
+callback,callback,1
+namespace,命名空间,1
+plugin,插件,1
+widget,组件,1

@@ -143,15 +143,15 @@ body {
 	padding: 4px 6px;
 	border-radius: 4px;
 	cursor: pointer;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	white-space: normal;
+	word-break: break-word;
+	line-height: 1.4;
 }
 
 .toc-item:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
-.toc-item.lv2 { padding-left: 16px; }
-.toc-item.lv3 { padding-left: 26px; }
-.toc-item.lv4, .toc-item.lv5, .toc-item.lv6 { padding-left: 36px; }
+.toc-item.lv2 { padding-left: 12px; }
+.toc-item.lv3 { padding-left: 20px; }
+.toc-item.lv4, .toc-item.lv5, .toc-item.lv6 { padding-left: 28px; }
 
 .set-row {
 	display: flex;
