@@ -11,6 +11,7 @@
 import { rpcCall } from '../shared/rpc.js';
 import { getSettings } from '../shared/settings.js';
 import { splitSentences } from '../shared/sentences.js';
+import { detectTextLang } from '../shared/detect-lang.js';
 
 /* ---------------- 译文白名单净化 ---------------- */
 
@@ -101,6 +102,28 @@ function renderArticle(data) {
 				figure.appendChild(cap);
 			}
 			frag.appendChild(figure);
+			continue;
+		}
+
+		// 代码块：只按代码样式渲染，不进翻译队列
+		if (block.type === 'pre') {
+			const pre = document.createElement('pre');
+			pre.className = 'blk-pre';
+			pre.appendChild(sanitizeFragment(block.html));
+			frag.appendChild(pre);
+			continue;
+		}
+
+		// 不支持翻译的源语言（日/韩）：只显示原文，不进翻译队列
+		const blockLang = detectTextLang(block.html.replace(/<[^>]*>/g, ' '));
+		if (blockLang === 'ja' || blockLang === 'ko') {
+			const pair = document.createElement('div');
+			pair.className = 'pair';
+			const orig = document.createElement('div');
+			orig.className = 'orig';
+			orig.appendChild(sanitizeFragment(block.html));
+			pair.appendChild(orig);
+			frag.appendChild(pair);
 			continue;
 		}
 

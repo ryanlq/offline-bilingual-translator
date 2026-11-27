@@ -287,3 +287,24 @@ figure.blk-img figcaption {
 	text-align: center;
 	color: var(--tran-ink);
 }
+
+/* 代码块（原文保留，不翻译） */
+.blk-pre {
+	font-family: ui-monospace, SFMono-Regular, Consolas, "Cascadia Mono", Menlo, monospace;
+	font-size: 0.88em;
+	background: rgba(127, 127, 127, 0.12);
+	border: 1px solid rgba(127, 127, 127, 0.25);
+	border-radius: 6px;
+	padding: 12px 14px;
+	overflow-x: auto;
+	white-space: pre;
+	margin: 14px 0;
+}
+body[data-theme="dark"] .blk-pre {
+	background: rgba(255, 255, 255, 0.08);
+	border-color: rgba(255, 255, 255, 0.2);
+}
+body[data-theme="sepia"] .blk-pre {
+	background: rgba(112, 66, 20, 0.08);
+	border-color: rgba(112, 66, 20, 0.25);
+}

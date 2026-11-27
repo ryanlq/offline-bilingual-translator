@@ -165,7 +165,7 @@
 	 */
 	OBT.detectTextLang = function (text) {
 		if (!text) return null;
-		// 假名是日语的确定性标志（几乎全部日文都含假名）；谚文对应韩语
+		// 与 src/shared/detect-lang.js 保持一致（经典脚本无法 import）
 		const kana = (text.match(/[\u3040-\u30ff]/g) || []).length;
 		if (kana >= 2) return 'ja';
 		const hangul = (text.match(/[\uac00-\ud7af]/g) || []).length;

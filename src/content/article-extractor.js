@@ -110,7 +110,15 @@
 				}
 
 				const isHeading = /^h[1-6]$/.test(tag);
-				const isPara = ['p', 'li', 'blockquote', 'figcaption', 'dt', 'dd', 'pre'].includes(tag);
+				// pre（代码块）单独成块：保留原文不翻译，阅读模式按代码样式渲染
+				if (tag === 'pre') {
+					if (taken.has(child)) continue;
+					taken.add(child);
+					const html = cleanFragment(child);
+					if (hasMeaningfulText(html)) out.push({ type: 'pre', html });
+					continue;
+				}
+				const isPara = ['p', 'li', 'blockquote', 'figcaption', 'dt', 'dd'].includes(tag);
 				if (isHeading || isPara) {
 					if (taken.has(child)) continue;
 					taken.add(child);

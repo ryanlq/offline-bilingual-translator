@@ -129,6 +129,15 @@
 			if (!selection || selection.isCollapsed || !text) return;
 			if (text.length < 2 || text.length > 2000) return;
 
+			// 选区完全位于代码元素内（code/pre/kbd/samp）：代码/命令不翻译，不弹窗
+			const anchorEl = selection.anchorNode.nodeType === Node.ELEMENT_NODE
+				? selection.anchorNode
+				: selection.anchorNode.parentElement;
+			const focusEl = selection.focusNode.nodeType === Node.ELEMENT_NODE
+				? selection.focusNode
+				: selection.focusNode.parentElement;
+			if (anchorEl?.closest?.('code, pre, kbd, samp') && focusEl?.closest?.('code, pre, kbd, samp')) return;
+
 			const rect = selection.getRangeAt(0).getBoundingClientRect();
 			let direction = OBT.resolveDirection(
 				this.settings.translateDirection,
