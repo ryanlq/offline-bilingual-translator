@@ -12,6 +12,8 @@ const DEFAULT_SETTINGS = {
 	selectTranslateEnabled: true, // 划词翻译开关
 	selectTheme: 'light', // 划词弹窗主题（light/dark/sepia）
 	readerStyle: 'columns', // 阅读模式默认排版（逐句/交替/双栏）
+	readerTheme: 'light', // 阅读模式主题（light/blue/sepia/ink/dark）
+	readerFontSize: 18, // 阅读模式字号
 	excludeSelectors: [],
 	ocrLangs: 'eng',
 	ocrFrom: 'en',

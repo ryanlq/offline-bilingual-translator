@@ -235,6 +235,8 @@ function observePairs() {
 
 async function flush() {
 	if (queueEl.size === 0 || flushing) return;
+	// 单语原文模式：暂停拉取翻译（切出单语时自动续翻）
+	if (currentStyle() === 'plain') return;
 	flushing = true;
 	try {
 		while (queueEl.size) {
@@ -307,7 +309,69 @@ async function flush() {
 
 /* ---------------- 工具栏 ---------------- */
 
-async function wireToolbar() {
+// ---------------- 侧栏 + 顶栏接线 ----------------
+
+/** 当前排版（plain 时暂停翻译，切出自动续翻） */
+function currentStyle() {
+	return document.body.dataset.style || 'columns';
+}
+
+async function wireSidebar() {
+	// 排版模式按钮：切换 + 持久化；从单语切出时恢复翻译
+	for (const btn of document.querySelectorAll('.style-btn')) {
+		btn.addEventListener('click', () => {
+			const wasPlain = currentStyle() === 'plain';
+			document.body.dataset.style = btn.dataset.style;
+			if (btn.dataset.style !== 'sentence') {
+				for (const p of state.pairs) {
+					if (p.joinedDirty) refreshJoined(p);
+				}
+			}
+			for (const b of document.querySelectorAll('.side-btn'))
+				b.classList.toggle('active', b === btn);
+			saveSettings({ readerStyle: btn.dataset.style }).catch(() => {});
+			// 从单语切出：恢复被暂停的翻译
+			if (wasPlain && btn.dataset.style !== 'plain') flush();
+		});
+	}
+	// 应用已保存的排版
+	const savedStyle = (await getSettings()).readerStyle || 'columns';
+	const styleBtn = document.querySelector(`.side-btn[data-style="${savedStyle}"]`) || document.querySelector('.side-btn[data-style="columns"]');
+	if (styleBtn) {
+		document.body.dataset.style = styleBtn.dataset.style;
+		styleBtn.classList.add('active');
+	}
+
+	// 字号下拉：持久化
+	const fontSel = document.getElementById('font-select');
+	const savedFont = (await getSettings()).readerFontSize || 18;
+	document.documentElement.style.setProperty('--reader-font-size', `${savedFont}px`);
+	fontSel.value = String(savedFont);
+	fontSel.addEventListener('change', () => {
+		const size = Math.min(22, Math.max(14, Number(fontSel.value) || 18));
+		document.documentElement.style.setProperty('--reader-font-size', `${size}px`);
+		saveSettings({ readerFontSize: size }).catch(() => {});
+	});
+
+	// 主题圆点：5 主题 + 持久化
+	const savedTheme = (await getSettings()).readerTheme || 'light';
+	document.body.dataset.theme = ['blue', 'sepia', 'ink', 'dark'].includes(savedTheme) ? savedTheme : 'light';
+	for (const dot of document.querySelectorAll('.dot')) {
+		dot.classList.toggle('active', dot.dataset.theme === document.body.dataset.theme);
+		dot.addEventListener('click', () => {
+			document.body.dataset.theme = dot.dataset.theme;
+			for (const d of document.querySelectorAll('.dot'))
+				d.classList.toggle('active', d === dot);
+			saveSettings({ readerTheme: dot.dataset.theme }).catch(() => {});
+		});
+	}
+
+	// 导出
+	document.getElementById('export-md').addEventListener('click', exportMarkdown);
+	document.getElementById('download-md').addEventListener('click', downloadMarkdown);
+}
+
+function wireTopbar() {
 	// 返回原文：阅读标签通过 openerTabId 记录了来源页（tabs.getCurrent 在扩展页不可靠）。
 	// 激活原标签后关闭自己；会话恢复等场景找不到来源时至少关闭自己。
 	document.getElementById('back').addEventListener('click', async () => {
@@ -331,79 +395,187 @@ async function wireToolbar() {
 		}
 	});
 
-	for (const btn of document.querySelectorAll('.style-btn')) {
-		btn.addEventListener('click', () => {
-			document.body.dataset.style = btn.dataset.style;
-			// 从逐句切走时：补建逐句期间标脏的段落级合并译文
-			if (btn.dataset.style !== 'sentence') {
-				for (const p of state.pairs) {
-					if (p.joinedDirty) refreshJoined(p);
-				}
-			}
-			for (const b of document.querySelectorAll('.style-btn'))
-				b.classList.toggle('active', b === btn);
-			// 排版偏好持久化：下次打开沿用
-			saveSettings({ readerStyle: btn.dataset.style }).catch(() => {});
-		});
-	}
-	const savedStyle = (await getSettings()).readerStyle || 'columns';
-	const styleBtn = document.querySelector(`.style-btn[data-style="${savedStyle}"]`) || document.querySelector('.style-btn[data-style="columns"]');
-	document.body.dataset.style = styleBtn.dataset.style;
-	styleBtn.classList.add('active');
+	wireSpeakAll();
+	wireBookmark();
+	wireSearch();
+}
 
-	const applyFont = (delta) => {
-		const css = getComputedStyle(document.documentElement).getPropertyValue('--reader-font-size') || '18px';
-		let size = parseInt(css) || 18;
-		size = Math.min(28, Math.max(14, size + delta));
-		document.documentElement.style.setProperty('--reader-font-size', `${size}px`);
-	};
-	document.getElementById('font-minus').addEventListener('click', () => applyFont(-1));
-	document.getElementById('font-plus').addEventListener('click', () => applyFont(1));
+// ---------------- 朗读全文（顺序 TTS + 当前句高亮） ----------------
 
-	for (const btn of document.querySelectorAll('.theme-btn')) {
-		btn.addEventListener('click', () => {
-			document.body.dataset.theme = btn.dataset.theme;
-		});
-	}
+const speakCtl = { playing: false, stop: false };
 
-	// 导出：双语 Markdown（逐句交错视图优先，交替视图给段落级合并）
-	const toMarkdown = () => {
-		const lines = [`# ${document.getElementById('a-title').textContent}`, ''];
-		for (const p of state.pairs) {
-			if (document.body.dataset.style === 'sentence' || p.sentences.every((s) => s.text !== null)) {
-				for (const s of p.sentences) {
-					const origText = s.tranEl.parentElement.querySelector('.s-orig').textContent.trim();
-					const tranText = (s.text ?? '').trim();
-					lines.push(origText, '', tranText ? `> ${tranText}` : '', '');
-				}
-			} else {
-				const origText = p.origEl.textContent.trim();
-				const tranText = p.tranEl.textContent.trim();
-				const tran =
-					!tranText || tranText === '…' || tranText.startsWith('⚠') ? '' : `\n\n> ${tranText}`;
-				lines.push(`${origText}${tran}`, '');
-			}
+function collectSpeakList() {
+	const list = [];
+	for (const p of state.pairs) {
+		for (const s of p.sentences) {
+			const row = s.tranEl?.parentElement;
+			const text = (s.text ?? plainTextOf(s.orig)).trim();
+			if (text) list.push({ row, text });
 		}
-		return lines.join('\n');
-	};
-	document.getElementById('export-md').addEventListener('click', async () => {
-		try {
-			await navigator.clipboard.writeText(toMarkdown());
-			flash('已复制到剪贴板');
-		} catch {
-			flash('复制失败（剪贴板权限）');
+	}
+	return list;
+}
+
+function plainTextOf(html) {
+	return new DOMParser().parseFromString(html, 'text/html').body.textContent.replace(/\s+/g, ' ').trim();
+}
+
+function clearSpeaking() {
+	for (const el of document.querySelectorAll('.speaking')) el.classList.remove('speaking');
+}
+
+function wireSpeakAll() {
+	const btn = document.getElementById('speak-all');
+	btn.addEventListener('click', () => {
+		if (speakCtl.playing) {
+			speakCtl.stop = true;
+			speechSynthesis.cancel();
+			return;
 		}
-	});
-	document.getElementById('download-md').addEventListener('click', () => {
-		const blob = new Blob([toMarkdown()], { type: 'text/markdown' });
-		const a = document.createElement('a');
-		a.href = URL.createObjectURL(blob);
-		a.download = (state.title || '双语文章').replace(/[\\/:*?"<>|]/g, '_') + '.md';
-		a.click();
-		URL.revokeObjectURL(a.href);
+		const list = collectSpeakList();
+		if (!list.length) return;
+		speakCtl.playing = true;
+		speakCtl.stop = false;
+		btn.textContent = '⏹ 停止';
+		let i = 0;
+		const next = () => {
+			clearSpeaking();
+			if (speakCtl.stop || i >= list.length) {
+				speakCtl.playing = false;
+				btn.textContent = '▶ 朗读';
+				return;
+			}
+			const item = list[i++];
+			item.row?.classList.add('speaking');
+			item.row?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+			const u = new SpeechSynthesisUtterance(item.text);
+			u.lang = /[\u4e00-\u9fff\u3040-\u30ff]/.test(item.text) ? 'zh-CN' : 'en-US';
+			u.rate = 0.95;
+			u.onend = () => setTimeout(next, 120);
+			u.onerror = () => setTimeout(next, 120);
+			speechSynthesis.speak(u);
+		};
+		next();
 	});
 }
 
+// ---------------- 书签（按来源页记录阅读位置） ----------------
+
+function bookmarkKey() {
+	return state.sourceUrl ? `bm:${hashStr(state.sourceUrl)}` : null;
+}
+
+function hashStr(s) {
+	let h = 0;
+	for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+	return Math.abs(h).toString(36);
+}
+
+function wireBookmark() {
+	document.getElementById('bookmark').addEventListener('click', async () => {
+		const key = bookmarkKey();
+		if (!key) return;
+		await chrome.storage.local.set({ [key]: { y: scrollY, t: Date.now() } });
+		flash('已记录书签 ✓');
+	});
+}
+
+async function restoreBookmark() {
+	const key = bookmarkKey();
+	if (!key) return;
+	const { [key]: bm } = await chrome.storage.local.get(key);
+	if (bm && typeof bm.y === 'number' && bm.y > 50) {
+		scrollTo(0, bm.y);
+		flash('已恢复上次阅读位置（书签）');
+	}
+}
+
+// ---------------- 页内搜索（回车逐个跳转命中） ----------------
+
+const searchState = { hits: [], cur: -1 };
+
+function wireSearch() {
+	const input = document.getElementById('search');
+	input.addEventListener('keydown', (event) => {
+		if (event.key !== 'Enter' || !input.value.trim()) return;
+		const q = input.value.trim().toLowerCase();
+		if (q !== searchState.q) {
+			searchState.q = q;
+			searchState.hits = state.pairs
+				.filter((p) => p.el.textContent.toLowerCase().includes(q))
+				.map((p) => p.el);
+			searchState.cur = -1;
+		}
+		if (!searchState.hits.length) {
+			flash(`未找到「${input.value.trim()}」`);
+			return;
+		}
+		searchState.cur = (searchState.cur + 1) % searchState.hits.length;
+		const el = searchState.hits[searchState.cur];
+		el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+		el.classList.add('search-hit');
+		setTimeout(() => el.classList.remove('search-hit'), 1600);
+		flash(`命中 ${searchState.hits.length} 处 · 第 ${searchState.cur + 1} 个（回车下一个）`);
+	});
+}
+
+// ---------------- 导出（双语 Markdown） ----------------
+
+function toMarkdown() {
+	const lines = [`# ${document.getElementById('a-title').textContent}`, ''];
+	for (const p of state.pairs) {
+		if (document.body.dataset.style === 'sentence' || p.sentences.every((s) => s.text !== null)) {
+			for (const s of p.sentences) {
+				const origText = s.tranEl.parentElement.querySelector('.s-orig').textContent.trim();
+				const tranText = (s.text ?? '').trim();
+				lines.push(origText, '', tranText ? `> ${tranText}` : '', '');
+			}
+		} else {
+			const origText = p.origEl.textContent.trim();
+			const tranText = p.tranEl.textContent.trim();
+			const tran =
+				!tranText || tranText === '…' || tranText.startsWith('⚠') ? '' : `\n\n> ${tranText}`;
+			lines.push(`${origText}${tran}`, '');
+		}
+	}
+	return lines.join('\n');
+}
+
+function exportMarkdown() {
+	navigator.clipboard
+		.writeText(toMarkdown())
+		.then(() => flash('已复制到剪贴板'))
+		.catch(() => flash('复制失败（剪贴板权限）'));
+}
+
+function downloadMarkdown() {
+	const blob = new Blob([toMarkdown()], { type: 'text/markdown' });
+	const a = document.createElement('a');
+	a.href = URL.createObjectURL(blob);
+	a.download = (state.title || '双语文章').replace(/[\\/:*?"<>|]/g, '_') + '.md';
+	a.click();
+	URL.revokeObjectURL(a.href);
+}
+// ---------------- 目录（由标题块生成） ----------------
+
+function buildToc() {
+	const list = document.getElementById('toc-list');
+	list.textContent = '';
+	let n = 0;
+	for (const p of state.pairs) {
+		if (p.block?.type !== 'h') continue;
+		n++;
+		const level = Math.min(4, Math.max(1, Number(p.block.level) || 1));
+		const el = p.el;
+		el.id = `sec-${n}`;
+		const btn = document.createElement('button');
+		btn.className = `toc-item lv${level}`;
+		btn.textContent = el.textContent.trim().slice(0, 40) || `标题 ${n}`;
+		btn.addEventListener('click', () => el.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+		list.appendChild(btn);
+	}
+	if (!n) list.textContent = '（本文无标题结构）';
+}
 let flashTimer = null;
 function flash(text) {
 	const el = document.getElementById('progress');
@@ -412,7 +584,7 @@ function flash(text) {
 	clearTimeout(flashTimer);
 	flashTimer = setTimeout(() => {
 		el.textContent = prev;
-	}, 1600);
+	}, 2000);
 }
 
 /* ---------------- 会话保活（翻译期间防 SW 休眠） ---------------- */
@@ -461,7 +633,17 @@ function stopKeepAlive() {
 	const data = stored[key];
 	if (key) chrome.storage.local.remove(key); // 一次性：读完即删
 
-	wireToolbar();
+	const settings = await getSettings();
+	document.body.dataset.theme = ['blue', 'sepia', 'ink', 'dark'].includes(settings.readerTheme)
+		? settings.readerTheme
+		: 'light';
+	document.documentElement.style.setProperty('--reader-font-size', `${settings.readerFontSize || 18}px`);
+	document.body.dataset.style = ['columns', 'sentence', 'interleave', 'plain'].includes(settings.readerStyle)
+		? settings.readerStyle
+		: 'columns';
+
+	wireSidebar();
+	wireTopbar();
 
 	if (!data || !data.blocks?.length) {
 		document.getElementById('a-title').textContent = '没有可用的阅读数据';
@@ -478,8 +660,10 @@ function stopKeepAlive() {
 		data.lang,
 	);
 	renderArticle(data);
+	buildToc();
 	observePairs();
 	startKeepAlive();
+	restoreBookmark();
 	wireVocabSave();
 })();
 

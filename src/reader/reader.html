@@ -5,36 +5,80 @@
 	<title>双语阅读</title>
 	<link rel="stylesheet" href="reader.css" />
 </head>
-<body data-theme="light" data-style="interleave">
-	<header class="toolbar">
-		<button id="back" class="tb-btn" title="关闭并返回原文">← 返回原文</button>
-		<span id="progress" class="progress-hint"></span>
-		<span class="tb-group">
-			<button class="tb-btn style-btn" data-style="interleave" title="译文跟随原段落">交替</button>
-			<button class="tb-btn style-btn" data-style="sentence" title="原文句/译文句交错">逐句</button>
-			<button class="tb-btn style-btn" data-style="columns" title="原文与译文左右双栏">双栏</button>
-		</span>
-		<span class="tb-group">
-			<button id="font-minus" class="tb-btn" title="减小字号">A−</button>
-			<button id="font-plus" class="tb-btn" title="增大字号">A+</button>
-		</span>
-		<span class="tb-group">
-			<button class="tb-btn theme-btn" data-theme="light" title="明亮主题">☀</button>
-			<button class="tb-btn theme-btn" data-theme="sepia" title="羊皮纸主题">◐</button>
-			<button class="tb-btn theme-btn" data-theme="dark" title="夜间主题">☾</button>
-		</span>
-		<button id="export-md" class="tb-btn" title="复制双语全文（Markdown）">复制</button>
-		<button id="download-md" class="tb-btn" title="下载双语全文（Markdown）">下载</button>
-	</header>
+<body data-theme="light" data-style="columns">
+	<div class="shell">
+		<aside class="sidebar">
+			<div class="brand">
+				<span class="brand-icon">📖</span>
+				<span class="brand-text">
+					<span class="brand-title">双语阅读</span>
+					<span class="brand-sub">Bilingual Reader</span>
+				</span>
+			</div>
 
-	<main id="reader-main">
-		<div class="article-head">
-			<h1 id="a-title"></h1>
-			<div id="a-meta" class="meta"></div>
+			<nav class="side-nav">
+				<button class="side-btn style-btn" data-style="columns" title="原文与译文左右双栏">▤ 双栏对照</button>
+				<button class="side-btn style-btn" data-style="sentence" title="原文句/译文句交错">☰ 逐句对照</button>
+				<button class="side-btn style-btn" data-style="interleave" title="译文跟随原段落">↕ 交替阅读</button>
+				<button class="side-btn style-btn" data-style="plain" title="只显示原文，不翻译">▢ 单语原文</button>
+			</nav>
+
+			<section class="side-sec">
+				<h3 class="side-h">目录</h3>
+				<div id="toc-list" class="toc-list"></div>
+			</section>
+
+			<section class="side-sec">
+				<h3 class="side-h">显示设置</h3>
+				<label class="set-row">
+					<span>字体大小</span>
+					<select id="font-select">
+						<option value="14">14px</option>
+						<option value="16">16px</option>
+						<option value="18">18px</option>
+						<option value="20">20px</option>
+						<option value="22">22px</option>
+					</select>
+				</label>
+				<div class="set-row">
+					<span>主题风格</span>
+					<div class="dots">
+						<button class="dot" data-theme="light" title="浅色"></button>
+						<button class="dot" data-theme="blue" title="蓝色"></button>
+						<button class="dot" data-theme="sepia" title="羊皮纸"></button>
+						<button class="dot" data-theme="ink" title="水墨"></button>
+						<button class="dot" data-theme="dark" title="夜间"></button>
+					</div>
+				</div>
+			</section>
+
+			<div class="side-foot">
+				<button id="export-md" class="side-mini" title="复制双语全文（Markdown）">复制全文</button>
+				<button id="download-md" class="side-mini" title="下载双语全文（Markdown）">下载</button>
+			</div>
+		</aside>
+
+		<div class="main-col">
+			<header class="topbar">
+				<button id="back" class="tb-btn" title="关闭并返回原文">← 返回原文</button>
+				<span id="progress" class="progress-hint"></span>
+				<span class="tb-group">
+					<button id="speak-all" class="tb-btn" title="顺序朗读全文（播放时逐句高亮）">▶ 朗读</button>
+					<button id="bookmark" class="tb-btn" title="记录当前阅读位置">🔖 书签</button>
+					<input id="search" class="search" placeholder="页内搜索…" />
+				</span>
+			</header>
+
+			<main id="reader-main">
+				<div class="article-head">
+					<h1 id="a-title"></h1>
+					<div id="a-meta" class="meta"></div>
+				</div>
+				<div id="content"></div>
+				<div id="error" class="error" style="display: none"></div>
+			</main>
 		</div>
-		<div id="content"></div>
-		<div id="error" class="error" style="display: none"></div>
-	</main>
+	</div>
 
 	<script type="module" src="reader.js"></script>
 </body>
