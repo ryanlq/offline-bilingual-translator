@@ -243,13 +243,26 @@ async function flush() {
 	flushing = true;
 	try {
 		while (queueEl.size) {
-			// 展开段落里未翻译的句子
+			// 展开段落里未翻译的句子；不能/不用翻译的直接搬到译文侧
 			const sentences = [];
 			for (const el of queueEl) {
 				const item = pairByOrigEl.get(el);
 				if (!item) continue;
 				for (const s of item.sentences) {
-					if (s.text === null) sentences.push({ item, s, html: s.orig });
+					if (s.text !== null) continue;
+					const plain = plainTextOf(s.orig);
+					const lang = detectTextLang(plain);
+					// 已是目标语言 / 日韩（引擎不支持）/ 非自然语言（纯代码、数字等）：
+					// 原文 HTML 直接作为译文，保证阅读连贯不出现乱译
+					if (!lang || lang === state.direction.to || lang === 'ja' || lang === 'ko') {
+						s.text = s.orig;
+						s.tranEl.textContent = '';
+						s.tranEl.appendChild(sanitizeFragment(s.orig));
+						state.done++;
+						refreshJoined(item);
+						continue;
+					}
+					sentences.push({ item, s, html: s.orig });
 				}
 			}
 			queueEl.clear();
