@@ -574,6 +574,7 @@ async function openReaderMode(tabId) {
 		files: [
 			'vendor/readability/Readability.js',
 			'vendor/readability/Readability-readerable.js',
+			'src/content/text-collector.js',
 			'src/content/article-extractor.js',
 		],
 	});

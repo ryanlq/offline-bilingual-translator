@@ -146,6 +146,7 @@
 
 	/** 降级路径：叶子块收集（collectParagraphs）+ 内联片段 */
 	function harvestFallback() {
+		if (typeof OBT.collectParagraphs !== 'function') return []; // text-collector 未注入时降级不可用
 		const paragraphs = OBT.collectParagraphs({});
 		return paragraphs.map(({ element }) => {
 			const tag = element.tagName.toLowerCase();
@@ -196,6 +197,24 @@
 				blocks = [];
 			}
 		}
+
+		// 索引/列表型页面检测：源文档有大量标题，但 Readability 产出几乎丢弃了全部标题
+		// （如 api.jquery.com 的 354 个接口名 h1 全被剥掉，只留描述段落——读起来无法知道
+		// 每段说的是哪个接口）。此类页面降级为叶子块收集，标题与描述都能保留。
+		const headingBlocks = blocks.filter((b) => b.type === 'h').length;
+		let srcHeadings = 0;
+		document.querySelectorAll('h1, h2, h3').forEach((el) => {
+			if ((el.textContent || '').trim().length >= 2) srcHeadings++;
+		});
+		if (srcHeadings >= 6 && headingBlocks <= 2) {
+			method = 'fallback';
+			try {
+				blocks = harvestFallback();
+			} catch {
+				// 回退失败：保留 Readability 产物（退化但可用）
+			}
+		}
+
 		if (blocks.length < 1) return { ok: false, reason: 'no-content' };
 
 		const textLength = blocks

@@ -586,7 +586,7 @@ function buildToc() {
 		el.id = `sec-${n}`;
 		const btn = document.createElement('button');
 		btn.className = `toc-item lv${level}`;
-		btn.textContent = el.textContent.trim().slice(0, 40) || `标题 ${n}`;
+		btn.textContent = (el.querySelector('.orig') || el).textContent.replace(/\s+/g, ' ').trim().slice(0, 40) || `标题 ${n}`;
 		btn.addEventListener('click', () => el.scrollIntoView({ block: 'start', behavior: 'smooth' }));
 		list.appendChild(btn);
 	}
