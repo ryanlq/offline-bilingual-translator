@@ -75,6 +75,7 @@ const state = {
 };
 /** 阅读元素 → 段落条目（O(1) 反查，避免 flush/observer 循环里 O(n) 线性扫） */
 const pairByEl = new Map();
+const pairByOrigEl = new Map(); // display:contents 无盒元素无法被 IO 观察，改观察原文子元素
 
 function renderArticle(data) {
 	document.getElementById('a-title').textContent = data.title;
@@ -118,7 +119,7 @@ function renderArticle(data) {
 		const blockLang = detectTextLang(block.html.replace(/<[^>]*>/g, ' '));
 		if (blockLang === 'ja' || blockLang === 'ko') {
 			const pair = document.createElement('div');
-			pair.className = 'pair';
+			pair.className = 'pair single';
 			const orig = document.createElement('div');
 			orig.className = 'orig';
 			orig.appendChild(sanitizeFragment(block.html));
@@ -175,6 +176,8 @@ function renderArticle(data) {
 		const pairItem = { block, el: pair, sentences, tranEl: tran, origEl: orig, joinedDirty: false };
 		state.pairs.push(pairItem);
 		pairByEl.set(pair, pairItem);
+		// display:contents 的 .pair 无盒子，IO 需观察有盒子的原文元素
+		pairByOrigEl.set(orig, pairItem);
 		state.total += sentences.length;
 	}
 	contentEl.appendChild(frag);
@@ -230,7 +233,7 @@ function observePairs() {
 		},
 		{ rootMargin: '500px 0px' },
 	);
-	for (const p of state.pairs) observer.observe(p.el);
+	for (const p of state.pairs) observer.observe(p.origEl);
 }
 
 async function flush() {
@@ -243,7 +246,7 @@ async function flush() {
 			// 展开段落里未翻译的句子
 			const sentences = [];
 			for (const el of queueEl) {
-				const item = pairByEl.get(el);
+				const item = pairByOrigEl.get(el);
 				if (!item) continue;
 				for (const s of item.sentences) {
 					if (s.text === null) sentences.push({ item, s, html: s.orig });

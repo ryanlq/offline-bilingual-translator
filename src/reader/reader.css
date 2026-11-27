@@ -330,150 +330,50 @@ mark.obt-hit { background: color-mix(in srgb, var(--accent) 30%, transparent); c
 	border-left: 2px solid var(--line);
 }
 
-body[data-style='columns'] .pair {
+/* 双栏模式：整书式两栏——原文整列在左，译文整列在右，逐段对齐。
+   display:contents 让每个对照单元的原文/译文成为内容网格的直接项，
+   自动落进左/右两栏；中缝以译文的左边框呈现（像一本书的中缝）。 */
+body[data-style='columns'] #reader-main {
+	max-width: min(80vw, 1600px);
+	width: 100%;
+}
+
+body[data-style='columns'] #content {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 0 22px;
+	gap: 0 36px;
 	align-items: start;
+	max-width: min(80vw, 1600px);
 }
 
-body[data-style='columns'] .pair .tran {
-	border-left: none;
-	border-top: 2px solid var(--line);
-	margin-top: 0;
-	padding-left: 0;
-	padding-top: 0.35em;
-}
+body[data-style='columns'] .pair { display: contents; }
 
-.pair.pending .tran .ph {
-	color: var(--ink-soft);
-	opacity: 0.6;
-	animation: pulse 1.2s ease-in-out 3; /* 有限次数：大量待译段落时无限动画持续触发合成 */
-}
+/* 非逐句模式隐藏逐句行容器（否则与原文/译文面板重复渲染） */
+body:not([data-style='sentence']) .pair .sentences { display: none; }
 
-@keyframes pulse {
-	50% {
-		opacity: 0.25;
-	}
-}
+/* 日/韩块（只有原文）：横跨两栏，不打乱后续段落的左右配对 */
+body[data-style='columns'] .pair.single > .orig { grid-column: 1 / -1; }
 
-.pair .tran.fail {
-	color: #c0392b;
-	font-size: 0.85em;
-}
+body[data-style='columns'] .pair > .orig,
+body[data-style='columns'] .pair > .tran { margin: 0 0 1.15em; }
 
-/* 逐句交错：句行 = 原文句 + 译文句；该模式下隐藏整段级 orig/tran */
-body[data-style='sentence'] .pair > .orig,
-body[data-style='sentence'] .pair > .tran {
-	display: none;
-}
-
-body:not([data-style='sentence']) .pair .sentences {
-	display: none;
-}
-
-.s-row {
-	margin-bottom: 0.65em;
-	cursor: pointer;
-	border-radius: 4px;
-	padding: 2px 4px;
-	margin-left: -4px;
-	transition: background-color 0.15s;
-}
-
-.s-row:hover {
-	background: color-mix(in srgb, var(--accent) 8%, transparent);
-}
-
-.action-menu {
-	position: absolute;
-	z-index: 50;
-	display: flex;
-	flex-direction: column;
-	background: var(--paper);
-	border: 1px solid var(--line);
-	border-radius: 8px;
-	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
-	padding: 4px;
-	min-width: 170px;
-}
-
-.menu-item {
-	border: none;
-	background: none;
-	text-align: left;
-	padding: 7px 12px;
-	font-size: 13px;
-	color: var(--ink);
-	cursor: pointer;
-	border-radius: 6px;
-	white-space: nowrap;
-}
-
-.menu-item:hover {
-	background: var(--paper-soft);
-	color: var(--accent);
-}
-
-.s-row.saved .s-orig::after {
-	content: ' ✓';
-	color: var(--accent);
-	font-size: 0.8em;
-}
-
-.pair > .orig,
-.pair > .tran {
-	cursor: pointer;
-	border-radius: 4px;
-}
-
-.s-orig {
-	margin: 0;
-}
-
-.s-tran {
-	color: var(--tran-ink);
-	font-size: 0.95em;
-	margin-top: 0.15em;
-	padding-left: 0.9em;
+body[data-style='columns'] .pair > .tran {
 	border-left: 2px solid var(--line);
+	padding-left: 22px;
 }
 
-.s-tran.fail {
-	color: #c0392b;
-	font-size: 0.85em;
-}
+/* 独立元素（插图/错误提示）横跨两栏，不打乱左右配对 */
+body[data-style='columns'] #content > figure,
+body[data-style='columns'] #content > .blk-pre,
+body[data-style='columns'] #content > .error { grid-column: 1 / -1; }
 
-/* 图片块 */
-figure.blk-img {
-	margin: 1.4em 0;
-	text-align: center;
-}
+/* ---------------- 单语原文模式 ---------------- */
 
-figure.blk-img img {
-	max-width: 100%;
-	border-radius: 6px;
-}
+body[data-style='plain'] .pair .tran,
+body[data-style='plain'] .pair .sentences { display: none; }
 
-figure.blk-img figcaption {
-	font-size: 0.78em;
-	color: var(--ink-soft);
-	margin-top: 6px;
-}
+/* ---------------- 代码块（原文保留，不翻译） ---------------- */
 
-/* 链接在阅读视图里保守着色 */
-#content a {
-	color: var(--accent);
-}
-
-.error {
-	margin: 40px auto;
-	max-width: 30rem;
-	text-align: center;
-	color: var(--tran-ink);
-}
-
-/* 代码块（原文保留，不翻译） */
 .blk-pre {
 	font-family: ui-monospace, SFMono-Regular, Consolas, "Cascadia Mono", Menlo, monospace;
 	font-size: 0.88em;
@@ -482,24 +382,17 @@ figure.blk-img figcaption {
 	border-radius: 6px;
 	padding: 12px 14px;
 	overflow-x: auto;
-	white-space: pre;
+	white-space: pre-wrap;
+	word-break: break-word;
 	margin: 14px 0;
 }
-body[data-theme="dark"] .blk-pre {
+
+body[data-theme='dark'] .blk-pre {
 	background: rgba(255, 255, 255, 0.08);
 	border-color: rgba(255, 255, 255, 0.2);
 }
-body[data-theme="sepia"] .blk-pre {
+
+body[data-theme='sepia'] .blk-pre {
 	background: rgba(112, 66, 20, 0.08);
 	border-color: rgba(112, 66, 20, 0.25);
 }
-
-/* 双栏模式：内容区放宽到视口 80%（默认 42rem 对双栏过窄） */
-body[data-style='columns'] .content {
-	max-width: min(80vw, 1600px);
-}
-
-/* ---------------- 单语原文模式 ---------------- */
-
-body[data-style='plain'] .pair .tran,
-body[data-style='plain'] .pair .sentences { display: none; }

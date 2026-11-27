@@ -61,6 +61,10 @@
 		<div class="main-col">
 			<header class="topbar">
 				<button id="back" class="tb-btn" title="关闭并返回原文">← 返回原文</button>
+				<div class="doc-info">
+					<div id="a-title" class="doc-title"></div>
+					<div id="a-meta" class="doc-meta"></div>
+				</div>
 				<span id="progress" class="progress-hint"></span>
 				<span class="tb-group">
 					<button id="speak-all" class="tb-btn" title="顺序朗读全文（播放时逐句高亮）">▶ 朗读</button>
@@ -70,10 +74,6 @@
 			</header>
 
 			<main id="reader-main">
-				<div class="article-head">
-					<h1 id="a-title"></h1>
-					<div id="a-meta" class="meta"></div>
-				</div>
 				<div id="content"></div>
 				<div id="error" class="error" style="display: none"></div>
 			</main>
