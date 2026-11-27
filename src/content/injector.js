@@ -20,9 +20,10 @@
 			display: block;
 			margin: 4px 0;
 			padding: 2px 0;
-			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-				"Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-			line-height: 1.6;
+			font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+				"Microsoft YaHei", "微软雅黑", "PingFang SC", sans-serif;
+			line-height: 1.75;
+			letter-spacing: 0.015em;
 			transition: background-color 0.15s;
 			user-select: none;
 			-webkit-user-select: none;

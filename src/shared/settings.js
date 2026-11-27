@@ -5,7 +5,7 @@
 
 const DEFAULT_SETTINGS = {
 	fontSize: 14,
-	textColor: '#8b8b8b',
+	textColor: '#060606',
 	backgroundColor: 'transparent',
 	hoverHighlight: true,
 	translateDirection: 'auto',
@@ -17,9 +17,13 @@ const DEFAULT_SETTINGS = {
 	ocrLangPath: '',
 };
 
+const LEGACY_TEXT_COLOR = '#8b8b8b'; // 旧版默认灰：静默迁移到新默认
+
 export async function getSettings() {
 	const { settings } = await chrome.storage.local.get('settings');
-	return { ...DEFAULT_SETTINGS, ...settings };
+	const merged = { ...DEFAULT_SETTINGS, ...settings };
+	if (merged.textColor === LEGACY_TEXT_COLOR) merged.textColor = DEFAULT_SETTINGS.textColor;
+	return merged;
 }
 
 export async function saveSettings(patch) {

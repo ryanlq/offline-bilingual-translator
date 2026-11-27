@@ -11,7 +11,7 @@
 	/** 默认设置 */
 	const DEFAULT_SETTINGS = {
 		fontSize: 14,
-		textColor: '#8b8b8b',
+		textColor: '#060606',
 		backgroundColor: 'transparent',
 		hoverHighlight: true,
 		inlineFormat: true, // 译文保留粗体/斜体/链接等内联格式（引擎 html 模式）
@@ -25,10 +25,13 @@
 	};
 
 	/** 读取设置（Firefox MV2 storage.local 为回调约定，统一用回调风格） */
+	const LEGACY_TEXT_COLOR = '#8b8b8b'; // 旧版默认灰：已存该值的老用户静默迁移到新默认
 	OBT.getSettings = async function () {
 		const stored = await new Promise((resolve) => chrome.storage.local.get('settings', resolve));
 		const { settings } = stored || {};
-		return { ...DEFAULT_SETTINGS, ...settings };
+		const merged = { ...DEFAULT_SETTINGS, ...settings };
+		if (merged.textColor === LEGACY_TEXT_COLOR) merged.textColor = DEFAULT_SETTINGS.textColor;
+		return merged;
 	};
 
 	/** 保存设置 */
