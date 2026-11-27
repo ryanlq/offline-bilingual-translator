@@ -1,0 +1,28 @@
+{
+ "packs": [
+  {
+   "id": "common-tech",
+   "label": "通用技术术语",
+   "file": "common-tech.csv",
+   "always": true
+  },
+  {
+   "id": "ai",
+   "label": "AI / 机器学习",
+   "file": "ai.csv",
+   "always": false
+  },
+  {
+   "id": "webdev",
+   "label": "Web 开发 / jQuery",
+   "file": "webdev.csv",
+   "always": false
+  },
+  {
+   "id": "cloud",
+   "label": "云计算 / Kubernetes",
+   "file": "cloud.csv",
+   "always": false
+  }
+ ]
+}

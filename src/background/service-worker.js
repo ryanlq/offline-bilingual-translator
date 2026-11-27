@@ -24,6 +24,7 @@ import {
 	deleteModel,
 } from './model-store.js';
 import { parseCsv, toCsv } from '../shared/glossary.js';
+import { detectDomains, packTermsFor } from './domain-detector.js';
 
 const OFFSCREEN_URL = 'src/offscreen/offscreen.html';
 
@@ -275,15 +276,22 @@ async function ensurePathLoaded(path, { streamId, force = false } = {}) {
 
 /** 翻译一批文本（直连不可用时自动走英语中转）
  *  siteOrigin: 页面来源站点（术语表按站点过滤；扩展页调用方经 payload 传入） */
-async function translateTexts(texts, from, to, { streamId, html = false, siteOrigin = null } = {}) {
+async function translateTexts(texts, from, to, { streamId, html = false, siteOrigin = null, tabId = null, signals = null } = {}) {
 	if (!Array.isArray(texts) || texts.length === 0) return [];
 
 	const path = await resolveTranslationPath(from, to);
 	await ensurePathLoaded(path, { streamId });
 
+	// 页面信号入缓存（领域识别按需执行）
+	if (tabId != null && signals) {
+		const hash = JSON.stringify([signals.title, signals.description, signals.h1h2?.length, signals.body?.length]);
+		const entry = tabSignals.get(tabId);
+		if (!entry || entry.hash !== hash) tabSignals.set(tabId, { hash, signals });
+	}
+
 	// 术语表同步（失败不阻断翻译，仅术语不生效）
 	let glossaryVersion = 0;
-	await syncGlossary(from, to, siteOrigin)
+	await syncGlossary(from, to, siteOrigin, tabId)
 		.then((v) => { glossaryVersion = v; })
 		.catch(() => {});
 
@@ -317,6 +325,8 @@ const GLOSSARY_KEY = 'glossary';
 let glossaryCache = null;
 /** offscreen 已同步状态：{ key, sig, version }（内容变更或引擎重启后重推） */
 let glossarySyncedAt = null;
+/** 每标签页的领域识别结果缓存：tabId → { hash, signals } */
+const tabSignals = new Map();
 
 async function glossaryLoad() {
 	if (glossaryCache) return glossaryCache;
@@ -387,14 +397,43 @@ rpcListen('glossary:exportCsv', async ({ pair = '', site = '' } = {}) => {
 });
 
 /** 推送当前方向+站点的术语至引擎上下文（版本号防陈旧；引擎重启/内容变更都会触发重推） */
-async function syncGlossary(from, to, siteOrigin) {
+async function syncGlossary(from, to, siteOrigin, tabId) {
 	const list = await glossaryLoad();
 	const pair = `${from}${to}`;
 	const site = siteOrigin ? siteOrigin.replace(/^https?:\/\//, '') : '';
-	const entries = list
+
+	// 用户术语（全局/站点）
+	const userEntries = list
 		.filter((e) => (!e.pair || e.pair === pair) && (!e.site || (site && e.site === site)))
 		.map((e) => ({ source: e.source, target: e.target, ...(e.cs ? { cs: true } : {}) }));
-	const key = `${pair}|${site}`;
+
+	// 领域包（common-tech 恒挂 + 信号打分命中的领域，最多 3 包）
+	let domainTerms = [];
+	try {
+		const signals = tabSignals.get(tabId);
+		const { domains } = await detectDomains(signals?.signals ?? {});
+		domainTerms = await packTermsFor(domains);
+	} catch {
+		/* 领域识别失败不阻断 */
+	}
+
+	// 合并去重：用户条目优先（同源词大小写不敏感）
+	const seen = new Set();
+	const entries = [];
+	for (const e of userEntries) {
+		const key = e.source.toLowerCase();
+		if (seen.has(key)) continue;
+		seen.add(key);
+		entries.push(e);
+	}
+	for (const e of domainTerms) {
+		const key = e.source.toLowerCase();
+		if (seen.has(key)) continue;
+		seen.add(key);
+		entries.push(e);
+	}
+
+	const key = `${pair}|${site}|${entries.length}:${domainTerms.length}`;
 	const sig = `${entries.length}:${list.length}`;
 	if (glossarySyncedAt && glossarySyncedAt.key === key && glossarySyncedAt.sig === sig) {
 		return glossarySyncedAt.version;
@@ -404,14 +443,26 @@ async function syncGlossary(from, to, siteOrigin) {
 	return version;
 }
 
+/** 记录标签页的页面信号（内容脚本在排版切换时上报） */
+rpcListen('pageSignals', ({ tabId, signals } = {}) => {
+	if (!tabId || !signals) return;
+	const hash = JSON.stringify([signals.title, signals.description, signals.h1h2?.length, signals.body?.length]);
+	tabSignals.set(tabId, { hash, signals });
+	return true;
+});
+
+
 /* ---------------- RPC：翻译 ---------------- */
 
 rpcListen('translate:texts', (payload, sender) => {
 	const tabOrigin = sender.tab?.url ? new URL(sender.tab.url).origin : null;
+	const tabId = sender.tab?.id ?? null;
 	return translateTexts(payload.texts, payload.from, payload.to, {
 		streamId: payload.streamId,
 		html: payload.html,
 		siteOrigin: payload.siteOrigin ?? tabOrigin ?? null,
+		tabId: payload.tabId ?? tabId ?? null,
+		signals: payload.signals ?? null,
 	});
 });
 
@@ -896,6 +947,14 @@ async function sendToTab(tabId, message, frameId) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	if (message?.type === 'pageSignals' && sender.tab?.id != null) {
+		const sig = message.payload?.signals ?? null;
+		if (sig) {
+			const hash = JSON.stringify([sig.title, sig.description, sig.h1h2?.length, sig.body?.length]);
+			tabSignals.set(sender.tab.id, { hash: Date.now(), signals: sig });
+		}
+		return false;
+	}
 	if (message?.type === 'command:fromContent') {
 		handleContentCommand(message.payload, sender)
 			.then((result) => sendResponse({ ok: true, result }))

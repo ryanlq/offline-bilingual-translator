@@ -1,0 +1,16 @@
+﻿source,target,cs,weight
+API,API,1,8
+DOM,DOM,1,8
+JSON,JSON,1,8
+XML,XML,1,7
+XHR,XHR,1,8
+HTTP,HTTP,1,7
+HTTPS,HTTPS,1,7
+URL,URL,1,7
+CSS,CSS,1,7
+SVG,SVG,1,7
+CORS,CORS,1,8
+SDK,SDK,1,8
+CLI,CLI,1,7
+repository,仓库,0,4
+runtime,运行时,0,4

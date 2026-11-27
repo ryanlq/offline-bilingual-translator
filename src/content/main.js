@@ -71,6 +71,8 @@
 				settings.translateDirection,
 				document.documentElement.lang,
 			);
+			// 页面信号上报：领域识别按标签页缓存（失败静默）
+			chrome.runtime.sendMessage({ type: 'pageSignals', payload: { signals: OBT.collectSignals() } }, () => void chrome.runtime.lastError);
 			OBT.startSessionKeepAlive();
 			await pageTranslator.run(direction, settings);
 		} catch (err) {

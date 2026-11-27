@@ -295,6 +295,7 @@ async function flush() {
 						to: state.direction.to,
 						html: true,
 						siteOrigin: state.sourceUrl ? new URL(state.sourceUrl).origin : undefined,
+						signals: { title: state.title, description: '', h1h2: [...document.querySelectorAll('.pair[data-block="h"] .orig')].map((h) => h.textContent.trim()).join(' ').slice(0, 1500), body: document.getElementById('content').textContent.replace(/\s+/g, ' ').slice(0, 5000) },
 					});
 					slice.forEach(({ s }, index) => {
 						s.text = translations[index] ?? '';

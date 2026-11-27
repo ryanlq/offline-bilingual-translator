@@ -35,6 +35,23 @@
 		return merged;
 	};
 
+	/** 采集页面领域信号（title/meta/h1h2/正文采样）供领域识别 */
+	OBT.collectSignals = function () {
+		const metas = document.querySelector('meta[name="description"]')?.getAttribute('content') ?? '';
+		const headings = [...document.querySelectorAll('h1, h2')]
+			.map((h) => h.textContent.trim())
+			.filter(Boolean)
+			.slice(0, 30)
+			.join(' ');
+		const body = (document.body?.innerText || document.body?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 5000);
+		return {
+			title: (document.title || '').slice(0, 300),
+			description: String(metas).slice(0, 300),
+			h1h2: headings.slice(0, 2000),
+			body,
+		};
+	};
+
 	/** 保存设置 */
 	OBT.saveSettings = async function (patch) {
 		const current = await OBT.getSettings();

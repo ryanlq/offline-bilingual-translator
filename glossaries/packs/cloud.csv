@@ -1,0 +1,228 @@
+﻿source,target,cs,weight
+Add-ons,附加组件（Add-ons）,,9
+Admission Controller,准入控制器（Admission Controller）,,9
+Affinity,亲和性（Affinity）,,9
+Aggregation Layer,聚合层（Aggregation Layer）,,9
+Annotation,注解（Annotation）,,9
+API-initiated eviction,API 发起的驱逐（API-initiated eviction）,,9
+API Group,API Group (API 组),,9
+API resource,API 资源,,9
+App Container,应用容器（App Container）,,9
+Application Architect,应用架构师（Application Architect）,,9
+Application Developer,应用开发者（Application Developer）,,9
+Applications,应用（Application）,,9
+Approver,批准者（Approver）,,9
+cAdvisor,cAdvisor,,9
+Container Device Interface (CDI),容器设备接口（CDI）,,9
+Common Expression Language,通用表达式语言（CEL）,,9
+Certificate,证书（Certificate）,,9
+cgroup (control group),控制组（cgroup；control group）,,9
+CIDR,CIDR,,9
+CLA (Contributor License Agreement),贡献者许可协议（CLA；Contributor License Agreement）,,9
+Cloud Controller Manager,云控制器管理器（Cloud Controller Manager）,,9
+Cloud Provider,云提供商（Cloud Provider）,,9
+Cluster Architect,集群架构师（Cluster Architect）,,9
+Cluster Infrastructure,集群基础设施（Cluster Infrastructure）,,9
+Cluster Operations,集群操作（Cluster Operations）,,9
+Cluster Operator,集群操作者（Cluster Operator）,,9
+Cluster,集群（Cluster）,,9
+Cloud Native Computing Foundation (CNCF),云原生计算基金会（CNCF；Cloud Native Computing Foundation）,,9
+Container network interface (CNI),容器网络接口（Container network interface；CNI）,,9
+Code Contributor,代码贡献者（Code Contributor）,,9
+Condition,状况（Condition）,,9
+ConfigMap,ConfigMap,,9
+Container Environment Variables,容器环境变量（Container Environment Variables）,,9
+Container Lifecycle Hooks,容器生命周期钩子（Container Lifecycle Hooks）,,9
+Container Runtime,容器运行时（Container Runtime）,,9
+Container,容器（Container）,,9
+containerd,containerd,,9
+Contributor,贡献者（Contributor）,,9
+Control Plane,控制平面（Control Plane）,,9
+Controller,控制器（Controller）,,9
+CRI-O,CRI-O,,9
+Container Runtime Interface (CRI),容器运行时接口（Container Runtime Interface；CRI）,,9
+CronJob,周期调度任务（CronJob）,,9
+Container Storage Interface (CSI),容器存储接口（Container Storage Interface；CSI）,,9
+CustomResourceDefinition,CustomResourceDefinition,,9
+DaemonSet,DaemonSet,,9
+Data Plane,数据平面（Data Plane）,,9
+Deployment,Deployment,,9
+Developer (disambiguation),开发者（Developer）,,9
+Device Plugin,设备插件（Device Plugin）,,9
+Device,设备,,9
+DeviceClass,DeviceClass,,9
+Disruption,干扰（Disruption）,,9
+Docker,Docker,,9
+Dockershim,Dockershim,,9
+Downstream (disambiguation),下游（Downstream）,,9
+Downward API,Downward API,,9
+Dynamic Resource Allocation,动态资源分配,,9
+Drain,腾空,,9
+Duration,Duration,,9
+Dynamic Volume Provisioning,动态卷制备（Dynamic Volume Provisioning）,,9
+EndpointSlice,EndpointSlice,,9
+Endpoints,端点（Endpoints）,,9
+Ephemeral Container,临时容器（Ephemeral Container）,,9
+etcd,etcd,,9
+Event,事件（Event）,,9
+Eviction,驱逐（Eviction）,,9
+Extensions,扩展组件（Extension）,,9
+Feature gate,特性门控（Feature gate）,,9
+Finalizer,Finalizer,,9
+FlexVolume,FlexVolume,,9
+Garbage Collection,垃圾收集（Garbage Collection）,,9
+Gateway API,Gateway API,,9
+Group Version Resource,组版本资源（Group Version Resource）,,9
+Helm Chart,Helm Chart,,9
+Horizontal Pod Autoscaler,Pod 水平自动扩缩器,,9
+HostAliases,HostAliases,,9
+Image,镜像（Image）,,9
+Immutable Infrastructure,不可变基础设施,,9
+Glossary,词汇表,,9
+Resource (infrastructure),资源（基础设施）,,9
+Ingress,Ingress,,9
+Init Container,Init 容器（Init Container）,,9
+Istio,Istio,,9
+Job,Job,,9
+JSON Web Token (JWT),JSON Web 令牌 (JWT),,9
+kOps (Kubernetes Operations),kOps (Kubernetes Operations),,9
+API server,API 服务器,,9
+kube-controller-manager,kube-controller-manager,,9
+kube-proxy,kube-proxy,,9
+kube-scheduler,kube-scheduler,,9
+Kubeadm,Kubeadm,,9
+Kubectl,Kubectl,,9
+Kubelet,Kubelet,,9
+Kubernetes API,Kubernetes API,,9
+Label,标签（Label）,,9
+LimitRange,LimitRange,,9
+Logging,日志（Logging）,,9
+Managed Service,托管服务,,9
+Manifest,清单（Manifest）,,9
+Master,Master,,4
+Member,成员（Member）,,9
+Minikube,Minikube,,9
+Mirror Pod,镜像 Pod（Mirror Pod）,,9
+Mixed Version Proxy (MVP),混合版本代理,,9
+Name,名称（Name）,,9
+Namespace,名字空间（Namespace）,,9
+Network Policy,网络策略,,9
+Node-pressure eviction,节点压力驱逐,,9
+Node,节点（Node）,,4
+Object,对象（Object）,,9
+Operator pattern,Operator 模式,,9
+Persistent Volume Claim,持久卷申领（Persistent Volume Claim）,,9
+Persistent Volume,持久卷（Persistent Volume）,,9
+Platform Developer,平台开发人员（Platform Developer）,,9
+Pod Disruption Budget,Pod 干扰预算（PDB）,,9
+Pod Disruption,Pod 干扰,,9
+Pod Lifecycle,Pod 生命周期,,9
+Pod Priority,Pod 优先级,,9
+Pod Security Policy,Pod 安全策略,,9
+PodTemplate,PodTemplate,,9
+Pod,Pod,,9
+PodGroup,PodGroup,,9
+Preemption,抢占（Preemption）,,9
+PriorityClass,PriorityClass,,9
+Probe,探针（Probe）,,9
+Proxy,代理（Proxy）,,9
+QoS Class,QoS 类（QoS Class）,,9
+Quantity,量纲（Quantity）,,9
+RBAC (Role-Based Access Control),基于角色的访问控制（RBAC）,,9
+ReplicaSet,ReplicaSet,,9
+Replica,副本（Replica）,,9
+ReplicationController,副本控制器（ReplicationController）,,9
+ResourceQuota,资源配额（ResourceQuota）,,9
+ResourceClaim,ResourceClaim,,9
+ResourceClaimTemplate,ResourceClaimTemplate,,9
+ResourceSlice,ResourceSlice,,9
+Reviewer,评审者（Reviewer）,,9
+Subject Alternative Name,主题备用名称（Subject Alternative Name）,,9
+Secret,Secret,,9
+Security Context,安全上下文（Security Context）,,9
+Selector,选择算符（Selector）,,9
+ServiceAccount,ServiceAccount,,9
+Service Catalog,服务目录（Service Catalog）,,9
+Service,服务（Service）,,4
+Shuffle-sharding,混排切片（Shuffle Sharding）,,9
+Sidecar Container,边车容器,,9
+SIG (special interest group),特别兴趣小组（SIG）,,9
+Spec,规约（Spec）,,9
+StatefulSet,StatefulSet,,9
+Static Pod,静态 Pod（Static Pod）,,9
+Storage Class,StorageClass,,9
+sysctl,sysctl,,9
+Taint,污点（Taint）,,9
+Toleration,容忍度（Toleration）,,9
+UID,UID,,9
+Upstream (disambiguation),上游（Uptream）,,9
+user namespace,用户名字空间,,9
+Volume Plugin,卷插件（Volume Plugin）,,9
+Volume,卷（Volume）,,9
+Watch,监视（Watch）,,9
+WG (working group),工作组（Working Group，WG）,,9
+Workload,工作负载（Workload）,,9
+Abstraction,抽象,,9
+Agile Software Development,敏捷软件开发,,9
+API Gateway,API 网关,,9
+Application Programming Interface (API),应用程序接口 (API),,9
+Autoscaling,自动伸缩,,9
+Bare Metal Machine,裸机,,9
+Blue Green Deployment,蓝绿部署,,9
+Canary Deployment,金丝雀部署,,9
+Chaos Engineering,混沌工程,,9
+Client-Server Architecture,主从式架构,,9
+Cloud Computing,云计算,,9
+Cloud Native Apps,云原生应用程序,,9
+Cloud Native Security,云原生安全,,9
+Cloud Native Technology,云原生技术,,9
+Container Image,容器镜像,,9
+Container Orchestration,容器编排,,9
+Containers,容器,,9
+Containerization,容器化,,9
+Containers as a Service,容器即服务 (CaaS),,9
+Continuous Delivery (CD),持续交付 (CD),,9
+Continuous Deployment (CD),持续部署 (CD),,9
+Continuous integration (CI),持续集成 (CI),,9
+Datacenter,数据中心,,9
+Database as a Service (DBaaS),数据库即服务 (DBaaS),,9
+Debugging,调试,,9
+DevOps,开发运维 (DevOps),,9
+Distributed Apps,分布式应用,,9
+Distributed System,分布式系统,,9
+Edge Computing,边缘计算,,9
+Event-Driven Architecture,事件驱动架构,,9
+Firewall,防火墙,,9
+Horizontal Scaling,水平伸缩,,9
+Idempotence,幂等性,,9
+Infrastructure as a Service (IaaS),基础设施即服务 (IaaS),,9
+Infrastructure as Code (IaC),基础设施即代码 (IaC),,9
+Kubernetes,Kubernetes,,9
+Load Balancer,负载均衡器,,9
+Loosely Coupled Architecture,松耦合架构,,9
+Managed services,托管服务,,9
+Monolithic Apps,单体应用,,9
+Multitenancy,多租户模式,,9
+Mutual Transport Layer Security (mTLS),双向传输层安全性协议（mTLS）,,9
+Nodes,节点,,9
+Observability,可观测性,,9
+Platform as a Service (PaaS),平台即服务 (PaaS),,9
+Policy as Code (PaC),策略即代码 (PaC),,9
+Portability,可移植性,,9
+Reliability,可靠性,,9
+Scalability,可伸缩性,,9
+Search Results,Search Results,,9
+Security Chaos Engineering,安全混沌工程,,9
+Self Healing,自愈,,9
+Service Discovery,服务发现,,9
+Service Mesh,服务网格,,9
+Service Proxy,服务代理,,9
+Shift Left,左移 (Shift Left),,9
+Site Reliability Engineering,网站可靠性工程（SRE),,9
+Stateful Apps,有状态应用,,9
+Transport Layer Security (TLS),传输层安全性协议（TLS),,9
+Version Control,版本控制,,9
+Vertical Scaling,垂直伸缩,,9
+Virtual Machine,虚拟机,,9
+Virtualization,虚拟化,,9
+Zero Trust Architecture,零信任架构,,9

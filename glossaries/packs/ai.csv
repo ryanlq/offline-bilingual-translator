@@ -1,0 +1,91 @@
+﻿source,target,cs,weight
+AI agent,AI 智能体,,8
+agentic coding,智能体编程,,8
+agentic,智能体式,,6
+tool use,工具调用,,8
+tool calling,工具调用,,8
+function calling,函数调用,,8
+system prompt,系统提示词,,8
+prompt engineering,提示词工程,,8
+context window,上下文窗口,,8
+large language model,大语言模型,,8
+retrieval-augmented generation,检索增强生成,,8
+RAG,RAG,,6
+fine-tuning,微调,,6
+fine-tune,微调,,6
+vector database,向量数据库,,8
+reasoning model,推理模型,,8
+chain of thought,思维链,,8
+reinforcement learning,强化学习,,8
+RLHF,基于人类反馈的强化学习,,6
+model context protocol,模型上下文协议,,8
+MCP,MCP,,6
+Token,Token,1,3
+open weights,开放权重,,8
+on-device AI,端侧 AI,,8
+vibe coding,氛围编程,,8
+codebase,代码库,,6
+Cursor,Cursor,1,7
+Claude,Claude,,7
+Claude Code,Claude Code,,8
+Anthropic,Anthropic,,7
+OpenAI,OpenAI,,7
+Codex,Codex,1,7
+Copilot,Copilot,,7
+GitHub Copilot,GitHub Copilot,,8
+Gemini,Gemini,1,7
+Devin,Devin,,7
+Windsurf,Windsurf,,7
+Aider,Aider,,7
+Cline,Cline,,7
+LangChain,LangChain,,7
+LlamaIndex,LlamaIndex,,7
+Ollama,Ollama,,7
+Hugging Face,Hugging Face,,8
+OpenRouter,OpenRouter,,7
+DeepSeek,DeepSeek,,7
+Qwen,Qwen,,7
+Kimi,Kimi,,7
+GLM,GLM,,6
+Mistral,Mistral,1,7
+Perplexity,Perplexity,,7
+Grok,Grok,1,7
+vLLM,vLLM,,6
+llama.cpp,llama.cpp,,9
+LM Studio,LM Studio,,8
+Zed,Zed,,7
+transformer,Transformer,,10
+LLM,LLM,,10
+LLMs,LLM,,10
+GPU,GPU,,9
+neural network,神经网络,,8
+deep learning,深度学习,,8
+machine learning,机器学习,,6
+generative AI,生成式 AI,,10
+generative artificial intelligence,生成式人工智能,,10
+GenAI,GenAI,,10
+tokenizer,分词器,,8
+chatbot,聊天机器人,,7
+chatbots,聊天机器人,,7
+coding assistant,编程助手,,8
+training data,训练数据,,8
+training dataset,训练数据集,,8
+open-source model,开源模型,,8
+open-source models,开源模型,,8
+local model,本地模型,,7
+local models,本地模型,,7
+swe-bench,SWE-bench,,9
+agentic evals,智能体评测,,9
+code editor,代码编辑器,,5
+IDE,IDE,,6
+retrieval,检索,,5
+embeddings,嵌入,,9
+attention,注意力机制,,6
+backpropagation,反向传播,,9
+quantize,量化,,8
+inference engine,推理引擎,,8
+inference speed,推理速度,,7
+workflow automation,工作流自动化,,6
+autonomous,自主,,4
+price performance,性价比,,4
+context length,上下文长度,,8

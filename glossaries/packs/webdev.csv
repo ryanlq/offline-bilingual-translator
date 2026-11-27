@@ -1,0 +1,358 @@
+﻿source,target,cs,weight
+.add(),.add(),1,9
+.addBack(),.addBack(),1,9
+.addClass(),.addClass(),1,9
+.after(),.after(),1,9
+ajaxComplete event,ajaxComplete event,1,8
+.ajaxComplete(),.ajaxComplete(),1,9
+ajaxError event,ajaxError event,1,8
+.ajaxError(),.ajaxError(),1,9
+ajaxSend event,ajaxSend event,1,8
+.ajaxSend(),.ajaxSend(),1,9
+ajaxStart event,ajaxStart event,1,8
+.ajaxStart(),.ajaxStart(),1,9
+ajaxStop event,ajaxStop event,1,8
+.ajaxStop(),.ajaxStop(),1,9
+ajaxSuccess event,ajaxSuccess event,1,8
+.ajaxSuccess(),.ajaxSuccess(),1,9
+All Selector (&#8220;*&#8221;),All Selector (&#8220;*&#8221;),1,9
+.andSelf(),.andSelf(),1,9
+.animate(),.animate(),1,9
+:animated Selector,:animated Selector,1,8
+.append(),.append(),1,9
+.appendTo(),.appendTo(),1,9
+.attr(),.attr(),1,9
+.before(),.before(),1,9
+.bind(),.bind(),1,9
+blur event,blur event,1,8
+.blur(),.blur(),1,9
+:button Selector,:button Selector,1,8
+callbacks.add(),callbacks.add(),1,9
+callbacks.disable(),callbacks.disable(),1,9
+callbacks.disabled(),callbacks.disabled(),1,9
+callbacks.empty(),callbacks.empty(),1,9
+callbacks.fire(),callbacks.fire(),1,9
+callbacks.fired(),callbacks.fired(),1,9
+callbacks.fireWith(),callbacks.fireWith(),1,9
+callbacks.has(),callbacks.has(),1,9
+callbacks.lock(),callbacks.lock(),1,9
+callbacks.locked(),callbacks.locked(),1,9
+callbacks.remove(),callbacks.remove(),1,9
+change event,change event,1,8
+.change(),.change(),1,9
+:checkbox Selector,:checkbox Selector,1,8
+:checked Selector,:checked Selector,1,8
+.children(),.children(),1,9
+Class Selector (&#8220;.class&#8221;),Class Selector (&#8220;.class&#8221;),1,9
+.clearQueue(),.clearQueue(),1,9
+click event,click event,1,8
+.click(),.click(),1,9
+.clone(),.clone(),1,9
+.closest(),.closest(),1,9
+:contains() Selector,:contains() Selector,1,9
+.contents(),.contents(),1,9
+.context,.context,1,9
+contextmenu event,contextmenu event,1,8
+.contextmenu(),.contextmenu(),1,9
+.css(),.css(),1,9
+.data(),.data(),1,9
+dblclick event,dblclick event,1,8
+.dblclick(),.dblclick(),1,9
+deferred.always(),deferred.always(),1,9
+deferred.catch(),deferred.catch(),1,9
+deferred.done(),deferred.done(),1,9
+deferred.fail(),deferred.fail(),1,9
+deferred.isRejected(),deferred.isRejected(),1,9
+deferred.isResolved(),deferred.isResolved(),1,9
+deferred.notify(),deferred.notify(),1,9
+deferred.notifyWith(),deferred.notifyWith(),1,9
+deferred.pipe(),deferred.pipe(),1,9
+deferred.progress(),deferred.progress(),1,9
+deferred.promise(),deferred.promise(),1,9
+deferred.reject(),deferred.reject(),1,9
+deferred.rejectWith(),deferred.rejectWith(),1,9
+deferred.resolve(),deferred.resolve(),1,9
+deferred.resolveWith(),deferred.resolveWith(),1,9
+deferred.state(),deferred.state(),1,9
+deferred.then(),deferred.then(),1,9
+.delay(),.delay(),1,9
+.delegate(),.delegate(),1,9
+.dequeue(),.dequeue(),1,9
+.detach(),.detach(),1,9
+.die(),.die(),1,9
+:disabled Selector,:disabled Selector,1,8
+.each(),.each(),1,9
+Element Selector (&#8220;element&#8221;),Element Selector (&#8220;element&#8221;),1,9
+.empty(),.empty(),1,9
+:empty Selector,:empty Selector,1,8
+:enabled Selector,:enabled Selector,1,8
+.end(),.end(),1,9
+.eq(),.eq(),1,9
+:eq() Selector,:eq() Selector,1,9
+error event,error event,1,8
+.error(),.error(),1,9
+.even(),.even(),1,9
+:even Selector,:even Selector,1,8
+event.currentTarget,event.currentTarget,1,9
+event.data,event.data,1,9
+event.delegateTarget,event.delegateTarget,1,9
+event.isDefaultPrevented(),event.isDefaultPrevented(),1,9
+event.isImmediatePropagationStopped(),event.isImmediatePropagationStopped(),1,9
+event.isPropagationStopped(),event.isPropagationStopped(),1,9
+event.metaKey,event.metaKey,1,9
+event.namespace,event.namespace,1,9
+event.pageX,event.pageX,1,9
+event.pageY,event.pageY,1,9
+event.preventDefault(),event.preventDefault(),1,9
+event.relatedTarget,event.relatedTarget,1,9
+event.result,event.result,1,9
+event.stopImmediatePropagation(),event.stopImmediatePropagation(),1,9
+event.stopPropagation(),event.stopPropagation(),1,9
+event.target,event.target,1,9
+event.timeStamp,event.timeStamp,1,9
+event.type,event.type,1,9
+event.which,event.which,1,9
+.fadeIn(),.fadeIn(),1,9
+.fadeOut(),.fadeOut(),1,9
+.fadeTo(),.fadeTo(),1,9
+.fadeToggle(),.fadeToggle(),1,9
+:file Selector,:file Selector,1,8
+.filter(),.filter(),1,9
+.find(),.find(),1,9
+.finish(),.finish(),1,9
+.first(),.first(),1,9
+:first-child Selector,:first-child Selector,1,8
+:first-of-type Selector,:first-of-type Selector,1,8
+:first Selector,:first Selector,1,8
+focus event,focus event,1,8
+:focus Selector,:focus Selector,1,8
+.focus(),.focus(),1,9
+focusin event,focusin event,1,8
+.focusin(),.focusin(),1,9
+focusout event,focusout event,1,8
+.focusout(),.focusout(),1,9
+.get(),.get(),1,9
+:gt() Selector,:gt() Selector,1,9
+.has(),.has(),1,9
+Has Attribute Selector [name],Has Attribute Selector [name],1,8
+:has() Selector,:has() Selector,1,9
+.hasClass(),.hasClass(),1,9
+:header Selector,:header Selector,1,8
+.height(),.height(),1,9
+:hidden Selector,:hidden Selector,1,8
+.hide(),.hide(),1,9
+.hover(),.hover(),1,9
+.html(),.html(),1,9
+ID Selector (&#8220;#id&#8221;),ID Selector (&#8220;#id&#8221;),1,9
+:image Selector,:image Selector,1,8
+.index(),.index(),1,9
+.innerHeight(),.innerHeight(),1,9
+.innerWidth(),.innerWidth(),1,9
+:input Selector,:input Selector,1,8
+.insertAfter(),.insertAfter(),1,9
+.insertBefore(),.insertBefore(),1,9
+.is(),.is(),1,9
+jQuery(),jQuery(),1,9
+.jquery,.jquery,1,9
+jQuery.ajax(),jQuery.ajax(),1,9
+jQuery.ajaxPrefilter(),jQuery.ajaxPrefilter(),1,9
+jQuery.ajaxSetup(),jQuery.ajaxSetup(),1,9
+jQuery.ajaxTransport(),jQuery.ajaxTransport(),1,9
+jQuery.boxModel,jQuery.boxModel,1,9
+jQuery.browser,jQuery.browser,1,9
+jQuery.Callbacks(),jQuery.Callbacks(),1,9
+jQuery.contains(),jQuery.contains(),1,9
+jQuery.cssHooks,jQuery.cssHooks,1,9
+jQuery.cssNumber,jQuery.cssNumber,1,9
+jQuery.data(),jQuery.data(),1,9
+jQuery.Deferred(),jQuery.Deferred(),1,9
+jQuery.Deferred.exceptionHook(),jQuery.Deferred.exceptionHook(),1,9
+jQuery.Deferred.getErrorHook(),jQuery.Deferred.getErrorHook(),1,9
+jQuery.Deferred.getStackHook(),jQuery.Deferred.getStackHook(),1,9
+jQuery.dequeue(),jQuery.dequeue(),1,9
+jQuery.each(),jQuery.each(),1,9
+jQuery.error(),jQuery.error(),1,9
+jQuery.escapeSelector(),jQuery.escapeSelector(),1,9
+jQuery.extend(),jQuery.extend(),1,9
+jQuery.find(),jQuery.find(),1,9
+jQuery.fn.extend(),jQuery.fn.extend(),1,9
+jQuery.fx.interval,jQuery.fx.interval,1,9
+jQuery.fx.off,jQuery.fx.off,1,9
+jQuery.get(),jQuery.get(),1,9
+jQuery.getJSON(),jQuery.getJSON(),1,9
+jQuery.getScript(),jQuery.getScript(),1,9
+jQuery.globalEval(),jQuery.globalEval(),1,9
+jQuery.grep(),jQuery.grep(),1,9
+jQuery.hasData(),jQuery.hasData(),1,9
+jQuery.holdReady(),jQuery.holdReady(),1,9
+jQuery.htmlPrefilter(),jQuery.htmlPrefilter(),1,9
+jQuery.inArray(),jQuery.inArray(),1,9
+jQuery.isArray(),jQuery.isArray(),1,9
+jQuery.isEmptyObject(),jQuery.isEmptyObject(),1,9
+jQuery.isFunction(),jQuery.isFunction(),1,9
+jQuery.isNumeric(),jQuery.isNumeric(),1,9
+jQuery.isPlainObject(),jQuery.isPlainObject(),1,9
+jQuery.isWindow(),jQuery.isWindow(),1,9
+jQuery.isXMLDoc(),jQuery.isXMLDoc(),1,9
+jQuery.makeArray(),jQuery.makeArray(),1,9
+jQuery.map(),jQuery.map(),1,9
+jQuery.merge(),jQuery.merge(),1,9
+jQuery.noConflict(),jQuery.noConflict(),1,9
+jQuery.noop(),jQuery.noop(),1,9
+jQuery.now(),jQuery.now(),1,9
+jQuery.param(),jQuery.param(),1,9
+jQuery.parseHTML(),jQuery.parseHTML(),1,9
+jQuery.parseJSON(),jQuery.parseJSON(),1,9
+jQuery.parseXML(),jQuery.parseXML(),1,9
+jQuery.post(),jQuery.post(),1,9
+jQuery.proxy(),jQuery.proxy(),1,9
+jQuery.queue(),jQuery.queue(),1,9
+jQuery.ready,jQuery.ready,1,9
+jQuery.readyException(),jQuery.readyException(),1,9
+jQuery.removeData(),jQuery.removeData(),1,9
+jQuery.speed,jQuery.speed,1,9
+jQuery.sub(),jQuery.sub(),1,9
+jQuery.support,jQuery.support,1,9
+jQuery.trim(),jQuery.trim(),1,9
+jQuery.type(),jQuery.type(),1,9
+jQuery.unique(),jQuery.unique(),1,9
+jQuery.uniqueSort(),jQuery.uniqueSort(),1,9
+jQuery.when(),jQuery.when(),1,9
+keydown event,keydown event,1,8
+.keydown(),.keydown(),1,9
+keypress event,keypress event,1,8
+.keypress(),.keypress(),1,9
+keyup event,keyup event,1,8
+.keyup(),.keyup(),1,9
+:lang() Selector,:lang() Selector,1,9
+.last(),.last(),1,9
+:last-child Selector,:last-child Selector,1,8
+:last-of-type Selector,:last-of-type Selector,1,8
+:last Selector,:last Selector,1,8
+.length,.length,1,9
+.live(),.live(),1,9
+.load(),.load(),1,9
+load event,load event,1,8
+:lt() Selector,:lt() Selector,1,9
+.map(),.map(),1,9
+mousedown event,mousedown event,1,8
+.mousedown(),.mousedown(),1,9
+mouseenter event,mouseenter event,1,8
+.mouseenter(),.mouseenter(),1,9
+mouseleave event,mouseleave event,1,8
+.mouseleave(),.mouseleave(),1,9
+mousemove event,mousemove event,1,8
+.mousemove(),.mousemove(),1,9
+mouseout event,mouseout event,1,8
+.mouseout(),.mouseout(),1,9
+mouseover event,mouseover event,1,8
+.mouseover(),.mouseover(),1,9
+mouseup event,mouseup event,1,8
+.mouseup(),.mouseup(),1,9
+.next(),.next(),1,9
+.nextAll(),.nextAll(),1,9
+.nextUntil(),.nextUntil(),1,9
+.not(),.not(),1,9
+:not() Selector,:not() Selector,1,9
+:nth-child() Selector,:nth-child() Selector,1,9
+:nth-last-child() Selector,:nth-last-child() Selector,1,9
+:nth-last-of-type() Selector,:nth-last-of-type() Selector,1,9
+:nth-of-type() Selector,:nth-of-type() Selector,1,9
+.odd(),.odd(),1,9
+:odd Selector,:odd Selector,1,8
+.off(),.off(),1,9
+.offset(),.offset(),1,9
+.offsetParent(),.offsetParent(),1,9
+.on(),.on(),1,9
+.one(),.one(),1,9
+:only-child Selector,:only-child Selector,1,8
+:only-of-type Selector,:only-of-type Selector,1,8
+.outerHeight(),.outerHeight(),1,9
+.outerWidth(),.outerWidth(),1,9
+.parent(),.parent(),1,9
+:parent Selector,:parent Selector,1,8
+.parents(),.parents(),1,9
+.parentsUntil(),.parentsUntil(),1,9
+:password Selector,:password Selector,1,8
+.position(),.position(),1,9
+.prepend(),.prepend(),1,9
+.prependTo(),.prependTo(),1,9
+.prev(),.prev(),1,9
+.prevAll(),.prevAll(),1,9
+.prevUntil(),.prevUntil(),1,9
+.promise(),.promise(),1,9
+.prop(),.prop(),1,9
+.pushStack(),.pushStack(),1,9
+.queue(),.queue(),1,9
+:radio Selector,:radio Selector,1,8
+.ready(),.ready(),1,9
+.remove(),.remove(),1,9
+.removeAttr(),.removeAttr(),1,9
+.removeClass(),.removeClass(),1,9
+.removeData(),.removeData(),1,9
+.removeProp(),.removeProp(),1,9
+.replaceAll(),.replaceAll(),1,9
+.replaceWith(),.replaceWith(),1,9
+:reset Selector,:reset Selector,1,8
+resize event,resize event,1,8
+.resize(),.resize(),1,9
+:root Selector,:root Selector,1,8
+scroll event,scroll event,1,8
+.scroll(),.scroll(),1,9
+.scrollLeft(),.scrollLeft(),1,9
+.scrollTop(),.scrollTop(),1,9
+select event,select event,1,8
+.select(),.select(),1,9
+:selected Selector,:selected Selector,1,8
+.selector,.selector,1,9
+.serialize(),.serialize(),1,9
+.serializeArray(),.serializeArray(),1,9
+.show(),.show(),1,9
+.siblings(),.siblings(),1,9
+.size(),.size(),1,9
+.slice(),.slice(),1,9
+.slideDown(),.slideDown(),1,9
+.slideToggle(),.slideToggle(),1,9
+.slideUp(),.slideUp(),1,9
+.stop(),.stop(),1,9
+submit event,submit event,1,8
+:submit Selector,:submit Selector,1,8
+.submit(),.submit(),1,9
+:target Selector,:target Selector,1,8
+.text(),.text(),1,9
+:text Selector,:text Selector,1,8
+.toArray(),.toArray(),1,9
+.toggle(),.toggle(),1,9
+.toggleClass(),.toggleClass(),1,9
+.trigger(),.trigger(),1,9
+.triggerHandler(),.triggerHandler(),1,9
+.unbind(),.unbind(),1,9
+.undelegate(),.undelegate(),1,9
+.uniqueSort(),.uniqueSort(),1,9
+unload event,unload event,1,8
+.unload(),.unload(),1,9
+.unwrap(),.unwrap(),1,9
+.val(),.val(),1,9
+:visible Selector,:visible Selector,1,8
+.width(),.width(),1,9
+.wrap(),.wrap(),1,9
+.wrapAll(),.wrapAll(),1,9
+.wrapInner(),.wrapInner(),1,9
+Ajax,Ajax,1,7
+DOM,DOM,1,6
+JSON,JSON,1,6
+XML,XML,1,6
+XHR,XHR,1,6
+HTTP,HTTP,1,6
+HTTPS,HTTPS,1,6
+URL,URL,1,6
+CSS,CSS,1,6
+API,API,1,6
+SVG,SVG,1,6
+CORS,CORS,1,6
+promise,promise,1,6
+deferred,deferred,1,6
+callback,callback,1,6
+namespace,命名空间,1,6
+plugin,插件,1,6
+widget,组件,1,6

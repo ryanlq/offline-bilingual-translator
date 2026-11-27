@@ -176,6 +176,7 @@
 					from: direction.from,
 					to: direction.to,
 					html: Boolean(selHtml),
+					signals: OBT.collectSignals(),
 				});
 				this.showResult(originalContent, translated ?? '', x, y);
 			} catch (err) {
