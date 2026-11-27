@@ -215,7 +215,7 @@
 						--sp-label: #9aa0a6;
 						position: absolute;
 						z-index: 2147483646;
-						width: min(80vw, 1200px);
+						width: min(680px, calc(100vw - 24px));
 						background: var(--sp-bg);
 						border: 1px solid var(--sp-border);
 						border-radius: 10px;
