@@ -279,6 +279,7 @@ async function ensurePathLoaded(path, { streamId, force = false } = {}) {
  *  siteOrigin: 页面来源站点（术语表按站点过滤；扩展页调用方经 payload 传入） */
 async function translateTexts(texts, from, to, { streamId, html = false, siteOrigin = null, tabId = null, signals = null } = {}) {
 	if (!Array.isArray(texts) || texts.length === 0) return [];
+	touchTranslateActivity();
 
 	const path = await resolveTranslationPath(from, to);
 	await ensurePathLoaded(path, { streamId });
@@ -338,6 +339,30 @@ let glossaryCache = null;
 let glossarySyncedAt = null;
 /** 每标签页的领域识别结果缓存：tabId → { hash, signals } */
 const tabSignals = new Map();
+
+/** offscreen 空闲关闭：距最后一次翻译活动超过 3 分钟时彻底关闭引擎文档，
+ *  释放全部 WASM/模型/词典内存（下次翻译自动重建，模型在 IndexedDB 无需重新下载）。 */
+const OFFSCREEN_IDLE_MS = 3 * 60 * 1000;
+let lastTranslateActivity = 0;
+
+chrome.alarms.create('offscreen-idle', { periodInMinutes: 1 });
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+	if (alarm.name !== 'offscreen-idle') return;
+	if (!lastTranslateActivity || Date.now() - lastTranslateActivity < OFFSCREEN_IDLE_MS) return;
+	if (!(await hasOffscreen())) return;
+	try {
+		await chrome.offscreen.closeDocument();
+		lastTranslateActivity = 0;
+		glossarySyncedAt = null;
+		tabSignals.clear();
+	} catch {
+		/* 已关闭或正在关闭 */
+	}
+});
+
+function touchTranslateActivity() {
+	lastTranslateActivity = Date.now();
+}
 
 async function glossaryLoad() {
 	if (glossaryCache) return glossaryCache;
@@ -490,6 +515,7 @@ rpcListen('pageSignals', ({ tabId, signals } = {}) => {
 rpcListen('translate:texts', (payload, sender) => {
 	const tabOrigin = sender.tab?.url ? new URL(sender.tab.url).origin : null;
 	const tabId = sender.tab?.id ?? null;
+	touchTranslateActivity();
 	return translateTexts(payload.texts, payload.from, payload.to, {
 		streamId: payload.streamId,
 		html: payload.html,
