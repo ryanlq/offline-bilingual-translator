@@ -169,6 +169,7 @@
 			}
 
 			this.flushing = true;
+			console.log('[OBT flush] 开始批处理 items=', items.length);
 			try {
 				let start = 0;
 				while (start < items.length) {

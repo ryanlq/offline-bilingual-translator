@@ -74,11 +74,18 @@
 	 * @returns {Promise<any>}
 	 */
 	OBT.rpcCall = function (channel, payload) {
+		// 超时兜底：60s 无响应报错（不再无限挂起）
+		const rpcTimeoutMs = 60000;
 		return new Promise((resolve, reject) => {
 			const id = `content-${Date.now()}-${++serial}`;
+			const rpcTimer = setTimeout(() => {
+				chrome.runtime.onMessage.removeListener(listener);
+				reject(new Error(`RPC 超时: ${channel}（60s 无响应）`));
+			}, rpcTimeoutMs);
 			// 响应方通过 sendResponse 直接回传（广播式 RESP 监听作为兼容兜底）
 			const listener = (message) => {
 				if (message?.channel === RESP_PREFIX && message.id === id) {
+					clearTimeout(rpcTimer);
 					chrome.runtime.onMessage.removeListener(listener);
 					if (message.error) {
 						reject(new Error(message.error.message));
@@ -93,6 +100,7 @@
 			if (p && typeof p.then === 'function') {
 				p.then((resp) => {
 					if (resp && typeof resp === 'object' && resp.channel === RESP_PREFIX && resp.id === id) {
+						clearTimeout(rpcTimer);
 						chrome.runtime.onMessage.removeListener(listener);
 						if (resp.error) {
 							reject(new Error(resp.error.message));
