@@ -7,45 +7,29 @@
  */
 
 import { scoreDomains, pickDomains } from '../shared/domain-detect.js';
-
-/** 内置领域包（随扩展分发；术语格式 source,target,cs,weight） */
-const BUILTIN_PACKS = [
-	{ id: 'common-tech', label: '通用技术', file: 'glossaries/packs/common-tech.csv', always: true },
-	{ id: 'ai', label: 'AI / 机器学习', file: 'glossaries/packs/ai.csv' },
-	{ id: 'webdev', label: 'Web 开发', file: 'glossaries/packs/webdev.csv' },
-	{ id: 'cloud', label: '云计算 / K8s', file: 'glossaries/packs/cloud.csv' },
-];
+import { BUILTIN_PACKS as PACK_DATA } from './domain-packs-data.js';
 
 let packsCache = null;
 
 /** 加载内置领域包（懒加载；fetch 扩展内资源） */
+let lastLoadError = null;
+
 async function loadPacks() {
 	if (packsCache) return packsCache;
-	const packs = [];
-	for (const pack of BUILTIN_PACKS) {
-		try {
-			const url = chrome.runtime.getURL(`glossaries/packs/${pack.file}`);
-			const text = await (await fetch(url)).text();
-			const terms = [];
-			for (const line of text.split(/\r?\n/).slice(1)) {
-				if (!line.trim()) continue;
-				const [source, target, cs, weight] = line.split(',');
-				if (source?.trim() && target?.trim()) {
-					terms.push({
-						source: source.trim(),
-						target: target.trim(),
-						cs: /^(1|true|y|yes)$/i.test(cs ?? ''),
-						weight: Number(weight) || 5,
-					});
-				}
-			}
-			packs.push({ id: pack.id, always: Boolean(pack.always), terms });
-		} catch {
-			/* 单包损坏跳过 */
-		}
-	}
-	packsCache = packs;
-	return packs;
+	// 数据构建时已内嵌（domain-packs-data.js），无需运行时 fetch
+	packsCache = PACK_DATA.map((p) => ({
+		id: p.id,
+		always: Boolean(p.always),
+		terms: p.terms.map((t) => ({ ...t })),
+	}));
+	lastLoadError = null;
+	return packsCache;
+}
+
+/** 诊断：包加载状态 */
+export async function debugPacks() {
+	await loadPacks();
+	return { count: packsCache.length, error: lastLoadError, ids: packsCache.map((p) => `${p.id}:${p.terms.length}`) };
 }
 
 /** 领域打分 + 选包 */

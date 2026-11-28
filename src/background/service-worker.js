@@ -24,7 +24,7 @@ import {
 	deleteModel,
 } from './model-store.js';
 import { parseCsv, toCsv } from '../shared/glossary.js';
-import { detectDomains, packTermsFor } from './domain-detector.js';
+import { detectDomains, packTermsFor, debugPacks } from './domain-detector.js';
 
 const OFFSCREEN_URL = 'src/offscreen/offscreen.html';
 
@@ -442,6 +442,12 @@ async function syncGlossary(from, to, siteOrigin, tabId) {
 	glossarySyncedAt = { key, sig, version };
 	return version;
 }
+
+/** 诊断：领域包加载状态（临时） */
+rpcListen('debug:packs', async () => (await debugPacks()));
+
+/** 诊断：领域识别结果（临时，验证后可移除） */
+rpcListen('debug:domains', ({ signals } = {}) => detectDomains(signals ?? {}));
 
 /** 记录标签页的页面信号（内容脚本在排版切换时上报） */
 rpcListen('pageSignals', ({ tabId, signals } = {}) => {

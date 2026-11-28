@@ -29,6 +29,7 @@ const INCLUDE = [
 	'_locales',
 	'assets',
 	'src',
+	'glossaries',
 	'vendor',
 	'LICENSE',
 	'NOTICE',
