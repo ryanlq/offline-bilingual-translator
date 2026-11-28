@@ -18,6 +18,7 @@
 		translateDirection: 'auto', // auto: 根据页面语言选择方向
 		selectTranslateEnabled: true, // 划词翻译开关
 		selectTheme: 'light', // 划词弹窗主题（light/dark/sepia）
+		offscreenIdleMin: 3, // 翻译引擎空闲自动关闭（分钟，0 = 不关闭）
 		excludeSelectors: [],
 		ocrLangs: 'eng',
 		ocrFrom: 'en',

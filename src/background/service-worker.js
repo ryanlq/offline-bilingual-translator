@@ -348,7 +348,12 @@ let lastTranslateActivity = 0;
 chrome.alarms.create('offscreen-idle', { periodInMinutes: 1 });
 chrome.alarms.onAlarm.addListener(async (alarm) => {
 	if (alarm.name !== 'offscreen-idle') return;
-	if (!lastTranslateActivity || Date.now() - lastTranslateActivity < OFFSCREEN_IDLE_MS) return;
+	// 阈值从设置读取（分钟，0 = 不自动关闭）
+	const { settings } = await chrome.storage.local.get('settings');
+	const idleMin = Number(settings?.offscreenIdleMin ?? 3);
+	if (idleMin === 0) return;
+	const idleMs = idleMin * 60 * 1000;
+	if (!lastTranslateActivity || Date.now() - lastTranslateActivity < idleMs) return;
 	if (!(await hasOffscreen())) return;
 	try {
 		await chrome.offscreen.closeDocument();

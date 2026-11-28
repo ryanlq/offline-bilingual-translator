@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS = {
 	readerStyle: 'columns', // 阅读模式默认排版（逐句/交替/双栏）
 	readerTheme: 'light', // 阅读模式主题（light/blue/sepia/ink/dark）
 	readerFontSize: 18, // 阅读模式字号
+	offscreenIdleMin: 3, // 翻译引擎空闲自动关闭（分钟，0 = 不关闭）
 	excludeSelectors: [],
 	ocrLangs: 'eng',
 	ocrFrom: 'en',

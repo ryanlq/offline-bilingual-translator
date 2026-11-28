@@ -272,6 +272,24 @@
 			</div>
 
 			<div class="card">
+				<h2>性能 · 内存</h2>
+				<p class="hint">
+					翻译引擎在空闲一段时间后自动关闭，彻底释放占用的内存（约 500MB）；
+					下次翻译会自动重启引擎（约需数秒）。
+				</p>
+				<label class="row">
+					<span>空闲自动关闭引擎</span>
+					<select id="offscreenIdleMin">
+						<option value="3">3 分钟后</option>
+						<option value="5">5 分钟后</option>
+						<option value="10">10 分钟后</option>
+						<option value="15">15 分钟后</option>
+						<option value="0">不自动关闭</option>
+					</select>
+				</label>
+			</div>
+
+			<div class="card">
 				<h2>OCR 图片翻译</h2>
 				<div class="row">
 					<label class="main">识别语言</label>

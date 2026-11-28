@@ -10,6 +10,7 @@ import { getSettings, saveSettings, DEFAULT_SETTINGS } from '../shared/settings.
 
 const fields = [
 	'fontSize',
+	'offscreenIdleMin',
 	'textColor',
 	'hoverHighlight',
 	'inlineFormat',
@@ -27,6 +28,7 @@ function setField(id, value) {
 
 function getField(id) {
 	const el = document.getElementById(id);
+	if (id === 'offscreenIdleMin') return Number(el.value) || 0;
 	if (el.type === 'checkbox') return el.checked;
 	if (el.type === 'number') return Number(el.value) || DEFAULT_SETTINGS[id];
 	return el.value;
