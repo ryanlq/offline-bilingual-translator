@@ -147,6 +147,11 @@
 	/** 降级路径：叶子块收集（collectParagraphs）+ 内联片段；rootDoc: 在干净克隆文档上收集（避开翻译宿主标记） */
 	function harvestFallback(rootDoc) {
 		if (typeof OBT.collectParagraphs !== 'function') return []; // text-collector 未注入时降级不可用
+		// 克隆文档可能带整页翻译的宿主与标记：剥除后再收集（克隆本身即弃，可原地改）
+		if (rootDoc) {
+			rootDoc.querySelectorAll('[data-obt-host]').forEach((n) => n.remove());
+			rootDoc.querySelectorAll('[data-obt-original]').forEach((n) => n.removeAttribute('data-obt-original'));
+		}
 		const paragraphs = OBT.collectParagraphs({ rootDoc: rootDoc || null });
 		return paragraphs.map(({ element }) => {
 			const tag = element.tagName.toLowerCase();
@@ -206,14 +211,20 @@
 		document.querySelectorAll('h1, h2, h3').forEach((el) => {
 			if ((el.textContent || '').trim().length >= 2) srcHeadings++;
 		});
+		let fbError = null;
 		if (srcHeadings >= 6 && headingBlocks <= 2) {
 			method = 'fallback';
 			try {
-				blocks = harvestFallback(doc);
-			} catch {
+				// 注意：Readability.parse 会原地掏空传入文档（剥掉全部标题），
+				// 必须用全新克隆收集，才能拿回完整标题结构
+				blocks = harvestFallback(document.cloneNode(true));
+			} catch (err) {
+				fbError = String(err.message || err).slice(0, 120);
 				// 回退失败：保留 Readability 产物（退化但可用）
 			}
 		}
+		window.__obtDiag = { srcHeadings, headingBlocks, method, fbCount: blocks.length, fbError, extractWorld: 'x' };
+		const __diagSnapshot = JSON.stringify(window.__obtDiag);
 
 		if (blocks.length < 1) return { ok: false, reason: 'no-content' };
 
@@ -223,6 +234,7 @@
 
 		return {
 			ok: true,
+			__diagSnapshot,
 			data: {
 				title: (parsed && parsed.title) || document.title || '未命名页面',
 				byline: (parsed && parsed.byline) || '',
