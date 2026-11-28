@@ -786,6 +786,57 @@ function closeMenu() {
 	menuEl = null;
 }
 
+// 双击单词查词（词典启用时）：双击处取单词 → rpc 查询 → 浮窗展示音标/释义
+contentEl.addEventListener('dblclick', (event) => {
+	const sel = window.getSelection();
+	const word = (sel?.toString() || '').trim();
+	if (!word || /\s/.test(word) || word.length > 40) return;
+	if (!/[a-zA-Z]/.test(word)) return;
+	let rect = null;
+	try { rect = sel.getRangeAt(0).getBoundingClientRect(); } catch {}
+	lookupWord(word, rect);
+});
+
+async function lookupWord(word, rect) {
+	let enabled = false;
+	let entry = null;
+	try {
+		enabled = Boolean((await rpcCall('dict:status', {}))?.installed);
+		if (enabled) entry = await rpcCall('dict:lookup', { word });
+	} catch {
+		/* 查询失败静默 */
+	}
+	closeMenu();
+	menuEl = document.createElement('div');
+	menuEl.className = 'action-menu dict-menu';
+	if (!enabled) {
+		menuEl.textContent = '词典未启用（生词本页可开启）';
+	} else if (!entry) {
+		menuEl.textContent = `未收录「${word}」`;
+	} else {
+		const head = document.createElement('div');
+		head.className = 'dict-head';
+		head.textContent = `${entry.w}  /${entry.p || '—'}/`;
+		menuEl.appendChild(head);
+		const tran = document.createElement('div');
+		tran.className = 'dict-body';
+		tran.textContent = entry.t.replace(/\r\n/g, '\n');
+		menuEl.appendChild(tran);
+		const play = document.createElement('button');
+		play.className = 'menu-item';
+		play.textContent = '🔊 发音';
+		play.addEventListener('click', () => {
+			closeMenu();
+			speak(word);
+		});
+		menuEl.appendChild(play);
+	}
+	document.body.appendChild(menuEl);
+	const base = rect || { left: innerWidth / 2 - 150, bottom: innerHeight / 2 };
+	menuEl.style.left = `${Math.max(8, Math.min(base.left, innerWidth - 320))}px`;
+	menuEl.style.top = `${Math.max(8, base.bottom + 6)}px`;
+}
+
 function openMenu(anchorRect, items) {
 	closeMenu();
 	menuEl = document.createElement('div');

@@ -161,8 +161,14 @@
 				direction = detected === 'zh' ? { from: 'zh', to: 'en' } : { from: 'en', to: 'zh' };
 			}
 
+			// 词典模式：单个英文单词 + 词典启用 → 只显示查词卡片，不送翻译
+			const isSingleWord = !text.includes(' ') && /^[a-zA-Z'-]+$/.test(text);
 			const x = rect.left;
 			const y = rect.bottom + 6;
+			if (isSingleWord && this.settings?.dictEnabled) {
+				await this.showDictLookup(text, x, y);
+				return;
+			}
 
 			// 富文本：选区内联格式经净化后进原文栏；无标签时走纯文本零开销路径
 			const selHtml = this.selectionHtml();
@@ -269,6 +275,9 @@
 					.close { right: 10px; }
 					.theme { right: 34px; font-size: 13px; }
 					.close:hover, .theme:hover { color: #5f6368; }
+					.dict-phon { color: var(--sp-label); font-size: 12px; margin-bottom: 4px; }
+					.dict-pos { color: var(--sp-label); font-size: 11px; margin-bottom: 4px; white-space: pre-line; }
+					.dict-tran { white-space: pre-line; line-height: 1.6; }
 				</style>
 				<div class="popup" role="dialog">
 					<button class="theme" title="切换主题（浅色/暗色/护眼）">◐</button>
@@ -325,6 +334,55 @@
 			}
 		}
 
+		/** 词典查询卡片：音标 + 词性 + 中文释义（词典未启用时引导开启） */
+		async showDictLookup(word, x, y) {
+			this.ensureContainer();
+			this.applyTheme(this.settings?.selectTheme ?? 'light');
+			this._fill(this.originalContent, word);
+			this.translationContent.textContent = '查词中…';
+			this.place(x, y);
+			let entry = null;
+			let enabled = false;
+			try {
+				enabled = Boolean((await OBT.rpcCall('dict:status', {}))?.installed);
+				if (enabled) entry = await OBT.rpcCall('dict:lookup', { word });
+			} catch {
+				/* 查询失败按未启用处理 */
+			}
+			if (!this.container || this.container.style.display === 'none') return;
+			this._fill(this.originalContent, word);
+			if (!enabled) {
+				this.translationContent.textContent = '词典未启用（可在扩展设置页开启）';
+				this.place(x, y);
+				return;
+			}
+			if (!entry) {
+				this.translationContent.textContent = '未收录该词';
+				this.place(x, y);
+				return;
+			}
+			this.translationContent.textContent = '';
+			const frag = document.createDocumentFragment();
+			if (entry.p) {
+				const ph = document.createElement('div');
+				ph.className = 'dict-phon';
+				ph.textContent = `/${entry.p}/`;
+				frag.appendChild(ph);
+			}
+			if (entry.pos) {
+				const ps = document.createElement('div');
+				ps.className = 'dict-pos';
+				ps.textContent = entry.pos;
+				frag.appendChild(ps);
+			}
+			const tr = document.createElement('div');
+			tr.className = 'dict-tran';
+			tr.textContent = String(entry.t || '').replace(/\r\n/g, '\n');
+			frag.appendChild(tr);
+			this.translationContent.appendChild(frag);
+			this.place(x, y);
+		}
+
 		/** 应用主题（浅色/暗色/护眼） */
 		applyTheme(theme) {
 			this.ensureContainer();
@@ -364,3 +422,5 @@
 
 	OBT.SelectTranslator = SelectTranslator;
 })();
+
+

@@ -79,6 +79,19 @@
 		<div id="gl-list" class="gl-list"></div>
 	</section>
 
+	<section class="anki card">
+		<h2>词典 <span id="dict-status" class="status">检查中…</span></h2>
+		<p class="hint">
+			启用后，阅读模式与划词时可以点击英文单词查看音标和中文释义。词典数据
+			（ECDICT 精简版，约 2MB）按需下载一次，之后完全离线可用。
+		</p>
+		<div class="anki-actions">
+			<button id="dict-install" class="btn primary" style="display: none">下载词典（2MB）</button>
+			<button id="dict-remove" class="btn danger" style="display: none">移除词典</button>
+			<span id="dict-result" class="hint"></span>
+		</div>
+	</section>
+
 	<section class="list-area">
 		<input id="search" type="search" placeholder="搜索原文 / 译文 / 来源标题…" />
 		<div id="vocab-list"></div>

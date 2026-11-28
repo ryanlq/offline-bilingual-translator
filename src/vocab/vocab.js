@@ -388,6 +388,7 @@ function wire() {
 	});
 	$('anki-refresh').addEventListener('click', connectAnki);
 	wireGlossary();
+	wireDict();
 	$('anki-template').addEventListener('click', createObtTemplate);
 
 	$('anki-push').addEventListener('click', pushToAnki);
@@ -409,6 +410,7 @@ function wire() {
 	wireTts();
 	refreshTts();
 	refreshGlossary();
+	refreshDict();
 	connectAnki();
 })();
 
@@ -529,5 +531,40 @@ function wireGlossary() {
 		if (!confirm(`确定清空全部 ${glossaryEntries.length} 条术语？此操作不可撤销。`)) return;
 		await rpcCall('glossary:clear');
 		await refreshGlossary();
+	});
+}
+
+
+/* ---------------- 词典（ECDICT 精简版，点词查义） ---------------- */
+
+async function refreshDict() {
+	const st = await rpcCall('dict:status');
+	const installed = Boolean(st?.installed);
+	$('dict-status').textContent = installed ? '已启用' : '未启用';
+	$('dict-status').className = `status ${installed ? 'ok' : ''}`;
+	$('dict-install').style.display = installed ? 'none' : '';
+	$('dict-remove').style.display = installed ? '' : 'none';
+}
+
+function wireDict() {
+	$('dict-install').addEventListener('click', async () => {
+		const btn = $('dict-install');
+		btn.disabled = true;
+		$('dict-status').textContent = '下载中…';
+		try {
+			await rpcCall('dict:download', {});
+			await refreshDict();
+			glFlash('词典启用 ✓ 阅读模式与划词时可点词查义');
+		} catch (err) {
+			$('dict-status').textContent = '下载失败';
+			glFlash(`词典下载失败：${String(err.message ?? err).slice(0, 50)}`);
+		} finally {
+			btn.disabled = false;
+		}
+	});
+	$('dict-remove').addEventListener('click', async () => {
+		await rpcCall('dict:delete', {});
+		await refreshDict();
+		glFlash('词典已移除');
 	});
 }

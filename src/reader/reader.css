@@ -396,3 +396,9 @@ body[data-theme='sepia'] .blk-pre {
 	background: rgba(112, 66, 20, 0.08);
 	border-color: rgba(112, 66, 20, 0.25);
 }
+
+/* 词典查词浮窗 */
+.dict-menu { max-width: 320px; padding: 10px 12px; }
+.dict-head { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+.dict-body { font-size: 13px; line-height: 1.6; color: var(--ink); white-space: pre-line; max-height: 240px; overflow: auto; }
+.dict-menu .menu-item { text-align: left; }

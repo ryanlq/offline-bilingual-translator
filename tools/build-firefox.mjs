@@ -30,6 +30,7 @@ const INCLUDE = [
 	'assets',
 	'src',
 	'glossaries',
+	'glossaries/dict',
 	'vendor',
 	'LICENSE',
 	'NOTICE',

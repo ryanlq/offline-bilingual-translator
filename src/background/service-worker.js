@@ -25,6 +25,7 @@ import {
 } from './model-store.js';
 import { parseCsv, toCsv } from '../shared/glossary.js';
 import { detectDomains, packTermsFor, debugPacks } from './domain-detector.js';
+import { dictInstalled, dictDownload, dictDelete, dictLookup } from './dictionary.js';
 
 const OFFSCREEN_URL = 'src/offscreen/offscreen.html';
 
@@ -319,6 +320,16 @@ async function translateTexts(texts, from, to, { streamId, html = false, siteOri
 }
 
 
+
+/* ---------------- 词典（ECDICT 精简版，用户主动开启） ---------------- */
+
+rpcListen('dict:status', async () => ({ installed: await dictInstalled() }));
+rpcListen('dict:download', async () => dictDownload('dict-pack'));
+rpcListen('dict:delete', async () => dictDelete());
+rpcListen('dict:lookup', async ({ word } = {}) => {
+	if (!word?.trim()) throw new Error('缺少单词');
+	return dictLookup(word.trim());
+});
 /* ---------------- 术语表（数据 + 推送） ---------------- */
 
 const GLOSSARY_KEY = 'glossary';
