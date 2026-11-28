@@ -11,7 +11,7 @@
 (function () {
 	'use strict';
 
-	const OBT = self.OBT;
+	const OBT = (self.OBT = self.OBT || {});
 	if (!OBT) return;
 
 	/** 阅读视图保留的内联标签（译文与原文共用同一白名单口径） */
@@ -160,6 +160,20 @@
 					if (!n.isConnected || n.querySelector('article')) return;
 					n.remove();
 				});
+			// 纯链接列表降噪：目录/标签云/相关文章清单（li ≥ 3 且几乎全是链接文本）。
+			// 保护例外：含 article/标题/媒体/代码/表格的列表可能是“链接即内容”的
+			// 条目型正文（新闻索引、链接合集），不删。
+			rootDoc.querySelectorAll('ul, ol').forEach((list) => {
+				if (!list.isConnected || list.querySelector('article, h1, h2, h3, h4, h5, h6, img, pre, table, video')) return;
+				if (list.querySelectorAll(':scope > li').length < 3) return;
+				const allLen = (list.textContent || '').replace(/\s+/g, '').length;
+				if (!allLen) return;
+				let linkLen = 0;
+				list.querySelectorAll('a').forEach((a) => {
+					linkLen += (a.textContent || '').replace(/\s+/g, '').length;
+				});
+				if (linkLen / allLen >= 0.85) list.remove();
+			});
 		}
 		const paragraphs = OBT.collectParagraphs({ rootDoc: rootDoc || null });
 		return paragraphs.map(({ element }) => {
@@ -257,4 +271,6 @@
 			},
 		};
 	};
+	// 诊断/测试入口：降级收集（含导航容器与纯链接列表降噪）
+	OBT.harvestFallback = harvestFallback;
 })();
