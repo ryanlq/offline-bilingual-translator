@@ -406,6 +406,9 @@ rpcListen('engine:translate', async ({ texts, direction, models, html = false, g
 	return results;
 });
 
+// 每批翻译完成后重置空闲计时器
+if (modelIdleTimer !== undefined) touchModelActivity();
+
 /** 术语回贴后的汉字间空格清理（回贴 token 时会带入空格） */
 function tidyCjkSpaces(text) {
 	return text.replace(/([\u4e00-\u9fff\u3040-\u30ff])[ ]+([\u4e00-\u9fff\u3040-\u30ff])/g, '$1$2');
@@ -558,5 +561,16 @@ rpcListen('image:fetchAsDataUrl', async ({ url }) => {
 	return { dataUrl };
 });
 
+
+/** 诊断：offscreen 内存（Bergamot WASM 堆计入 JS 堆） */
+rpcListen('offscreen:mem', () => {
+	const mem = performance.memory || {};
+	return {
+		usedMB: Math.round((mem.usedJSHeapSize || 0) / 1048576),
+		totalMB: Math.round((mem.totalJSHeapSize || 0) / 1048576),
+		limitMB: Math.round((mem.jsHeapSizeLimit || 0) / 1048576),
+		models: engine ? [...engine.models.keys()] : [],
+	};
+});
 // 通知后台 offscreen 已就绪（尽力而为，后台会以 ping 轮询兜底）
 rpcEmit('offscreen-ready', { ready: true });

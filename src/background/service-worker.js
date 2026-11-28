@@ -454,7 +454,23 @@ async function syncGlossary(from, to, siteOrigin, tabId) {
 	return version;
 }
 
-/** 诊断：领域包加载状态（临时） */
+/** 诊断：内存与缓存规模（临时） */
+rpcListen('debug:memory', async () => {
+	const swMem = performance.memory ? {
+		usedMB: Math.round(performance.memory.usedJSHeapSize / 1048576),
+		totalMB: Math.round(performance.memory.totalJSHeapSize / 1048576),
+	} : null;
+	let offMem = null;
+	try { offMem = await rpcCall('offscreen:mem', {}); } catch { offMem = { offscreen: '未启动' }; }
+	const stored = await listStoredModels().catch(() => []);
+	return {
+		sw: swMem,
+		offscreen: offMem,
+		storedPacks: stored.map((s) => `${s.direction}/${s.part}: ${Math.round((s.size || 0) / 1048576)}MB`),
+	};
+});
+
+/** 记录标签页的页面信号（内容脚本在排版切换时上报） */
 rpcListen('debug:packs', async () => (await debugPacks()));
 
 /** 诊断：领域识别结果（临时，验证后可移除） */
