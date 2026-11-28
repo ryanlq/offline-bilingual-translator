@@ -151,6 +151,15 @@
 		if (rootDoc) {
 			rootDoc.querySelectorAll('[data-obt-host]').forEach((n) => n.remove());
 			rootDoc.querySelectorAll('[data-obt-original]').forEach((n) => n.removeAttribute('data-obt-original'));
+			// 导航类容器降噪：页首导航/页脚链接墙/侧栏目录不是阅读内容，
+			// 降级全量收集前剔除（借鉴 Defuddle 的选择器策略）。
+			// 保守例外：内部含 article 的容器可能是某些站点的正文壳，不删。
+			rootDoc
+				.querySelectorAll('nav, footer, aside, [role="navigation"], #sidebar, .sidebar')
+				.forEach((n) => {
+					if (!n.isConnected || n.querySelector('article')) return;
+					n.remove();
+				});
 		}
 		const paragraphs = OBT.collectParagraphs({ rootDoc: rootDoc || null });
 		return paragraphs.map(({ element }) => {
