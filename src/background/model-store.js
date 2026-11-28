@@ -212,6 +212,11 @@ async function sha256Hex(buffer) {
  *   force: 忽略缓存命中，强制重新下载（用于「重新下载」；下载失败时旧缓存不被破坏）
  * @returns {Promise<ArrayBuffer>}
  */
+/** 通用写入：任意 direction/part 的记录（如词典包等非语言包数据） */
+export async function putFileRecord(record) {
+	return txWrite((store) => store.put(record));
+}
+
 export async function ensureModelFile(fileSpec, { streamId, force = false }) {
 	// 命中缓存？（force 时跳过，但新文件写入前不会删除旧记录）
 	const cached = force ? null : await getModelFile(fileSpec.direction, fileSpec.part);

@@ -6,7 +6,7 @@
  * 查询：word → { phonetic, translation, pos }
  */
 
-import { getModelFile, putFile, deleteModel } from './model-store.js';
+import { getModelFile, putFileRecord, deleteModel } from './model-store.js';
 
 
 const DICT_KEY = { direction: 'dict', part: 'ecdict-lite' };
@@ -37,7 +37,7 @@ export async function dictDownload(streamId = 'dict-pack') {
 		const json = await new Response(new Blob([buf]).stream().pipeThrough(ds)).text();
 		const entries = JSON.parse(json);
 		if (!Array.isArray(entries) || entries.length < 1000) throw new Error('词典数据异常');
-		await putFile({
+		await putFileRecord({
 			direction: DICT_KEY.direction,
 			part: DICT_KEY.part,
 			name: 'ecdict-lite.json.gz',
