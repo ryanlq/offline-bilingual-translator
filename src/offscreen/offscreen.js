@@ -563,6 +563,21 @@ rpcListen('image:fetchAsDataUrl', async ({ url }) => {
 
 
 /** 诊断：offscreen 内存（Bergamot WASM 堆计入 JS 堆） */
+// 空闲自动卸载：15 分钟无翻译活动则释放模型内存（WASM 堆保留供复用，重载约 2 秒）
+const MODEL_IDLE_MS = 15 * 60 * 1000;
+let modelIdleTimer = null;
+function touchModelActivity() {
+	clearTimeout(modelIdleTimer);
+	modelIdleTimer = setTimeout(async () => {
+		if (!engine || engine.models.size === 0) return;
+		for (const key of [...engine.models.keys()]) {
+			const { from, to } = JSON.parse(key);
+			engine.freeTranslationModel({ from, to });
+		}
+		engine.models.clear();
+	}, MODEL_IDLE_MS);
+}
+
 rpcListen('offscreen:mem', () => {
 	const mem = performance.memory || {};
 	return {
